@@ -1,5 +1,5 @@
 use bevy::{
-   ecs::query::{self, QueryData}, prelude::*, sprite::MaterialMesh2dBundle, window::WindowResized
+   prelude::*, sprite::MaterialMesh2dBundle, window::WindowResized
 };
 
 const BALL_STARTING_POSITION: Vec3 = Vec3::new(0.0, 0.0, 1.0);
@@ -13,8 +13,7 @@ fn main() {
    App::new()
       .add_plugins(DefaultPlugins)
       .add_systems(Startup, setup)
-      .add_systems(Update, resize_notificator)
-      .add_systems(FixedUpdate, (window_walls, apply_gravity, apply_velocity).chain())
+      .add_systems(FixedUpdate, (window_walls, mouse_click, apply_gravity, apply_velocity).chain())
       .run();
 }
 
@@ -53,6 +52,7 @@ fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, time: Res<Time>
     }
 }
 
+// Add boundaries for the ball (screen)
 fn window_walls(
    mut query: Query<(&mut Transform, &mut Velocity, &Ball)>,
    window: Query<&Window>
@@ -64,11 +64,11 @@ fn window_walls(
    //    (wx, wy) = (event.width, event.height);
    // }
 
-   let (wx, wy) = getwindowsize(window); 
+   let (window_width, window_height) = getwindowsize(window);
 
-   let right_x = wx / 2.;
+   let right_x = window_width / 2.;
    let left_x = -right_x;
-   let upper_y = wy / 2.;
+   let upper_y = window_height / 2.;
    let lower_y = -upper_y;
    // println!("{} {} {} {}", right_x,lower_y, wx, wy);
     
@@ -101,12 +101,6 @@ fn window_walls(
    }
 }
 
-fn resize_notificator(mut resize_events: EventReader<WindowResized>) {
-   for event in resize_events.read().into_iter() {
-      //  println!("width = {} height = {}", event.width, event.height);
-   }
-}
-
 fn getwindowsize(window: Query<&Window>) -> (f32, f32){
    let window = window.single();
 
@@ -117,9 +111,35 @@ fn getwindowsize(window: Query<&Window>) -> (f32, f32){
    (width, height)
 }
 
+// Add gravity for making all balls fall
 fn apply_gravity(mut query: Query<&mut Velocity>) {
    for mut velocity in &mut query {
       velocity.x += GRAVITY.x;
       velocity.y += GRAVITY.y;
+   }
+}
+
+// Reposition ball on mouse-click position
+fn mouse_click(
+   mouse_button_input: Res<ButtonInput<MouseButton>>,
+   mut query: Query<&mut Transform, With<Ball>>,
+   window: Query<&Window>,
+) {
+   if mouse_button_input.just_pressed(MouseButton::Left) {
+      let Some(cursor_position) = window.single().cursor_position() else {
+         return;
+      };
+
+      let (window_width, window_height) = getwindowsize(window);
+
+      let mut transform = query.single_mut();
+
+      transform.translation.x = cursor_position.x - (window_width / 2.);
+
+      if cursor_position.y <= (window_height / 2.) {
+         transform.translation.y = (window_height / 2.) - cursor_position.y;
+      } else {
+         transform.translation.y = -(cursor_position.y - (window_height / 2.));
+      }
    }
 }
