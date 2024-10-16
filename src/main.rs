@@ -1,5 +1,9 @@
 use bevy::{
-   prelude::*, sprite::MaterialMesh2dBundle, window::WindowResized
+   diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, 
+   input::keyboard::KeyboardInput, 
+   prelude::*, 
+   sprite::MaterialMesh2dBundle, 
+   window::WindowResized
 };
 
 const BALL_STARTING_POSITION: Vec3 = Vec3::new(0.0, 0.0, 1.0);
@@ -7,21 +11,41 @@ const BALL_RADIUS: f32 = 15.;
 const BALL_DIAMETER: f32 = BALL_RADIUS * 2.;
 const INITIAL_BALL_DIRECTION: Vec2 = Vec2::new(0., -0.1);
 const BALL_SPEED: f32 = 400.0;
-const GRAVITY: Vec2 = Vec2::new(0., -0.5);
+// const GRAVITY: Vec2 = Vec2::new(0., -1.);
+// const MAX_GRAVITY: f32 = 8.;
+const GRAVITY_CHANGE: f32 = 0.5;
 
 fn main() {
    App::new()
-      .add_plugins(DefaultPlugins)
+      .add_plugins((DefaultPlugins, FrameTimeDiagnosticsPlugin))
       .add_systems(Startup, setup)
-      .add_systems(FixedUpdate, (window_walls, mouse_click, apply_gravity, apply_velocity).chain())
+      .add_systems(Update, (fps_text_update_system, gravity_text_update_system))
+      .add_systems(FixedUpdate, (
+                  (window_walls, mouse_click, apply_gravity, apply_velocity).chain(),
+                  change_gravity
+               ))
       .run();
 }
 
+// A unit struct to help identify the Ball component
 #[derive(Component)]
 struct Ball;
 
 #[derive(Component, Deref, DerefMut, Debug)]
 struct Velocity(Vec2);
+
+#[derive(Debug, Resource)]
+struct Gravity{
+   x: f32,
+   y: f32
+}
+
+// A unit struct to help identify the FPS UI component, since there may be many Text components
+#[derive(Component)]
+struct FpsText;
+
+#[derive(Component)]
+struct GravityText;
 
 fn setup (
    mut commands: Commands,
@@ -33,22 +57,63 @@ fn setup (
 
    // Ball
    commands.spawn((
-       MaterialMesh2dBundle {
-          mesh: meshes.add(Circle::default()).into(),
-          material: materials.add(Color::WHITE),
-          transform: Transform::from_translation(BALL_STARTING_POSITION)
-              .with_scale(Vec2::splat(BALL_DIAMETER).extend(1.)),
-          ..default()
-       },
-       Ball,
-       Velocity(INITIAL_BALL_DIRECTION.normalize() * BALL_SPEED),
-       ));
+      MaterialMesh2dBundle {
+         mesh: meshes.add(Circle::default()).into(),
+         material: materials.add(Color::WHITE),
+         transform: Transform::from_translation(BALL_STARTING_POSITION)
+            .with_scale(Vec2::splat(BALL_DIAMETER).extend(1.)),
+         ..default()
+      },
+      Ball,
+      Velocity(INITIAL_BALL_DIRECTION.normalize() * BALL_SPEED),
+      ));
+
+   // Gravity
+   commands.insert_resource( Gravity { x: 0., y: -1. } );
+
+   // FPS Text
+   commands.spawn((
+      TextBundle::from_section(
+         "FPS: ", 
+         TextStyle {
+            font_size: 30.,
+            ..default()
+         },
+      )
+      .with_text_justify(JustifyText::Left)
+      .with_style(Style {
+         position_type: PositionType::Absolute,
+         bottom: Val::Px(5.),
+         right: Val::Px(50.),
+         ..default()
+      }),
+      FpsText,
+   ));
+
+   // Gravity Text
+   commands.spawn((
+      TextBundle::from_section(
+         "Gravity values: ", 
+         TextStyle {
+            font_size: 30.,
+            ..default()
+         },
+      )
+      .with_text_justify(JustifyText::Left)
+      .with_style(Style {
+         position_type: PositionType::Absolute,
+         bottom: Val::Px(50.),
+         right: Val::Px(50.),
+         ..default()
+      }),
+      GravityText,
+   ));
 }
 
 fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, time: Res<Time>) {
     for (mut transform, velocity) in &mut query {
-        transform.translation.x += velocity.x * time.delta_seconds();
-        transform.translation.y += velocity.y * time.delta_seconds();
+      transform.translation.x += velocity.x * time.delta_seconds();
+      transform.translation.y += velocity.y * time.delta_seconds();
     }
 }
 
@@ -81,13 +146,13 @@ fn window_walls(
       }
 
       // Upper screen border
-      if transform.translation.y > upper_y + BALL_RADIUS {
+      if transform.translation.y > upper_y - BALL_RADIUS {
          transform.translation.y = upper_y - BALL_RADIUS;
          velocity.y = 0.;
       }
 
       // Right border
-      if transform.translation.x > right_x + BALL_RADIUS {
+      if transform.translation.x > right_x - BALL_RADIUS {
          transform.translation.x = right_x - BALL_RADIUS;
          velocity.x = 0.;
       }
@@ -112,10 +177,13 @@ fn getwindowsize(window: Query<&Window>) -> (f32, f32){
 }
 
 // Add gravity for making all balls fall
-fn apply_gravity(mut query: Query<&mut Velocity>) {
+fn apply_gravity(
+   mut query: Query<&mut Velocity>,
+   gravity: Res<Gravity>
+) {
    for mut velocity in &mut query {
-      velocity.x += GRAVITY.x;
-      velocity.y += GRAVITY.y;
+      velocity.x += gravity.x;
+      velocity.y += gravity.y;
    }
 }
 
@@ -143,3 +211,49 @@ fn mouse_click(
       }
    }
 }
+
+fn change_gravity(
+   mut gravity: ResMut<Gravity>,
+   keyboard_input: Res<ButtonInput<KeyCode>>
+) {
+   if keyboard_input.pressed(KeyCode::ArrowDown) {
+      gravity.y += -GRAVITY_CHANGE;
+   } else if keyboard_input.pressed(KeyCode::ArrowUp) {
+      gravity.y += GRAVITY_CHANGE;
+   }
+
+   if keyboard_input.pressed(KeyCode::ArrowLeft) {
+      gravity.x += -GRAVITY_CHANGE;
+   } else if keyboard_input.pressed(KeyCode::ArrowRight) {
+      gravity.x += GRAVITY_CHANGE;
+   }
+
+   // Normalizing gravity values
+   let ng = Vec2::new(gravity.x, gravity.y).normalize() * Vec2::new(4., 4.);
+   gravity.x = ng[0];
+   gravity.y = ng[1];
+}
+
+fn fps_text_update_system(
+   diagnostics: Res<DiagnosticsStore>,
+   mut query: Query<&mut Text, With<FpsText>>,
+) {
+   for mut text in &mut query {
+       if let Some(fps) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS) {
+           if let Some(value) = fps.smoothed() {
+               // Update the value of the second section
+               text.sections[0].value = format!("FPS: {value:.2}");
+           }
+       }
+   }
+}
+
+fn gravity_text_update_system(
+   mut query: Query<&mut Text, With<GravityText>>,
+   gravity: Res<Gravity>
+) {
+   for mut text in &mut query {
+      text.sections[0].value = format!("Gravity values: {:.2}, {:.2}", gravity.x, gravity.y);
+   }
+}
+
