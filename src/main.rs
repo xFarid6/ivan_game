@@ -1,7 +1,10 @@
 mod constants;
 
 use bevy::{
-   diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, ecs::query, prelude::*, render::view::window, sprite::MaterialMesh2dBundle, transform::commands 
+   math::bounding::{Aabb2d, BoundingCircle, BoundingVolume, IntersectsVolume},
+   diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, 
+   prelude::*, 
+   sprite::MaterialMesh2dBundle,
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use rand::Rng;
@@ -39,12 +42,22 @@ struct Gravity{
    y: f32
 }
 
+#[derive(Component)]
+struct Triangle;
+
 // A unit struct to help identify the FPS UI component, since there may be many Text components
 #[derive(Component)]
 struct FpsText;
 
 #[derive(Component)]
 struct GravityText;
+
+#[derive(Component)]
+struct Collidable;
+
+#[derive(Event, Default)]
+struct CollisionEvent;
+
 
 fn setup (
    mut commands: Commands,
@@ -66,6 +79,23 @@ fn setup (
       Ball,
       Velocity(INITIAL_BALL_DIRECTION.normalize() * BALL_SPEED),
       ));
+
+   // Triangle
+   commands.spawn((
+      MaterialMesh2dBundle {
+         mesh: meshes.add(Triangle2d::new(
+            Vec2::Y * 50.0,
+            Vec2::new(-50.0, -50.0),
+            Vec2::new(50.0, -50.0),
+        )).into(),
+         material: materials.add(Color::srgb(1., 0., 0.)),
+         // transform: Transform::from_translation(Vec3 { x: 0., y: 0., z: 1. }),
+         transform: Transform { translation: Vec3 { x: 0., y: 0., z: 1. }, scale: Vec3 { x: 2., y: 3., z: 1. }, ..default() },
+         ..default()
+      },
+      Triangle,
+      Collidable
+   ));
 
    // Gravity
    commands.insert_resource( Gravity { x: 0., y: -1. } );
@@ -299,7 +329,7 @@ fn remove_temp_balls(
    query: Query<(Entity, &Transform), With<TempBall>>,
    window: Query<&Window>
 ) {
-   let (w, h) = getwindowsize(window);
+   let (_w, h) = getwindowsize(window);
    let basevec = Vec3 { x: 0.0, y: -h/2., z: 1. };
    for (entity, transform) in query.iter() {
       if transform.translation.y < basevec.y + BALL_RADIUS {
@@ -308,4 +338,36 @@ fn remove_temp_balls(
   }
 }
 
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+enum Collision {
+    Left,
+    Right,
+    Top,
+    Bottom,
+}
 
+fn ball_collision(
+   ball: BoundingCircle,
+   bounding_box: Aabb2d
+) -> Option<Collision> {
+   if !ball.intersects(&bounding_box) {
+      return None;
+  }
+
+  let closest = bounding_box.closest_point(ball.center());
+  let offset = ball.center() - closest;
+  let side =   if offset.x.abs() > offset.y.abs() 
+               {
+                  if offset.x < 0. {
+                     Collision::Left
+                  } else {
+                     Collision::Right
+                  }
+               } else if offset.y > 0. {
+                     Collision::Top
+               } else {
+                     Collision::Bottom
+               };
+
+  Some(side)
+}
