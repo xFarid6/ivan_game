@@ -1,11 +1,10 @@
 mod constants;
 
 use bevy::{
-   diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, 
-   prelude::*, 
-   sprite::MaterialMesh2dBundle, 
+   diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, ecs::query, prelude::*, render::view::window, sprite::MaterialMesh2dBundle, transform::commands 
 };
-
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use rand::Rng;
 
 use constants::*;
 
@@ -13,10 +12,12 @@ use constants::*;
 fn main() {
    App::new()
       .add_plugins((DefaultPlugins, FrameTimeDiagnosticsPlugin))
+      .add_plugins(WorldInspectorPlugin::new())
       .add_systems(Startup, setup)
       .add_systems(Update, (fps_text_update_system, gravity_text_update_system))
       .add_systems(FixedUpdate, (
                   (window_walls, mouse_click, apply_gravity, apply_velocity).chain(),
+                  (add_ball_random_pos, remove_temp_balls),
                   change_gravity
                ))
       .run();
@@ -26,7 +27,10 @@ fn main() {
 #[derive(Component)]
 struct Ball;
 
-#[derive(Component, Deref, DerefMut, Debug)]
+#[derive(Component, Debug)]
+struct TempBall;
+
+#[derive(Component, Deref, DerefMut, Debug, PartialEq)]
 struct Velocity(Vec2);
 
 #[derive(Debug, Resource)]
@@ -251,4 +255,57 @@ fn gravity_text_update_system(
       text.sections[0].value = format!("Gravity values: {:.2}, {:.2}", gravity.x, gravity.y);
    }
 }
+
+fn add_ball_random_pos(
+   keyboard_input: Res<ButtonInput<KeyCode>>,
+   mut commands: Commands,
+   mut meshes: ResMut<Assets<Mesh>>,
+   mut materials: ResMut<Assets<ColorMaterial>>,
+   window: Query<&Window>
+) {
+   if keyboard_input.pressed(KeyCode::KeyA) {
+      // Create rng generator
+      let mut rng = rand::thread_rng();
+      // println!("Integer: {}", rng.gen_range(0..10));
+      // println!("Float: {}", rng.gen_range(0.0..10.0));
+
+      // Get window dimensions
+      let (width, height) = getwindowsize(window);
+
+      // Select upper part of the window
+      let x = rng.gen_range(-width/2. .. width/2.);
+      let y = rng.gen_range((height/2.)-50. .. height/2.);
+
+      // Describe the new position for the ball
+      let pos: Vec3 = Vec3 { x, y, z: 1. };
+
+      // Spawn the ball
+      commands.spawn((
+         MaterialMesh2dBundle {
+            mesh: meshes.add(Circle::default()).into(),
+            material: materials.add(Color::WHITE),
+            transform: Transform::from_translation(pos)
+               .with_scale(Vec2::splat(BALL_DIAMETER/5.).extend(1.)),
+            ..default()
+         },
+         TempBall,
+         Velocity(INITIAL_BALL_DIRECTION.normalize() * BALL_SPEED),
+         ));
+   }
+}
+
+fn remove_temp_balls(
+   mut commands: Commands,
+   query: Query<(Entity, &Transform), With<TempBall>>,
+   window: Query<&Window>
+) {
+   let (w, h) = getwindowsize(window);
+   let basevec = Vec3 { x: 0.0, y: -h/2., z: 1. };
+   for (entity, transform) in query.iter() {
+      if transform.translation.y < basevec.y + BALL_RADIUS {
+         commands.entity(entity).despawn();
+      }
+  }
+}
+
 

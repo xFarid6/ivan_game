@@ -12,3 +12,4 @@ Daily planner for the continuation of the project:
 - [ ] Switch to absolute position on screen (instead of window) of the ball
 - [x] Change gravity with arrow keys
 - [x] Have clarity on [when to use Entities](https://taintedcoders.com/bevy/entities/)
+- [ ] Add bevy inspector
