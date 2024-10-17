@@ -8,7 +8,7 @@ Daily planner for the continuation of the project:
 - [-] ~~Control ball with keyboard arrow keys~~ 
 - [x] Add gravity for making all balls fall
 - [ ] Add static shapes in the space to test collision with the ball
-- [ ] Move constants to a different file
+- [x] Move constants to a different file
 - [ ] Switch to absolute position on screen (instead of window) of the ball
 - [x] Change gravity with arrow keys
-- [ ] Have clarity on when to use Entities
+- [x] Have clarity on [when to use Entities](https://taintedcoders.com/bevy/entities/)

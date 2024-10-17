@@ -1,19 +1,14 @@
+mod constants;
+
 use bevy::{
    diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, 
-   input::keyboard::KeyboardInput, 
    prelude::*, 
    sprite::MaterialMesh2dBundle, 
-   window::WindowResized
 };
 
-const BALL_STARTING_POSITION: Vec3 = Vec3::new(0.0, 0.0, 1.0);
-const BALL_RADIUS: f32 = 15.;
-const BALL_DIAMETER: f32 = BALL_RADIUS * 2.;
-const INITIAL_BALL_DIRECTION: Vec2 = Vec2::new(0., -0.1);
-const BALL_SPEED: f32 = 400.0;
-// const GRAVITY: Vec2 = Vec2::new(0., -1.);
-// const MAX_GRAVITY: f32 = 8.;
-const GRAVITY_CHANGE: f32 = 0.5;
+
+use constants::*;
+
 
 fn main() {
    App::new()
