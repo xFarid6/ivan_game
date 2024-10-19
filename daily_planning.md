@@ -12,7 +12,7 @@ Daily planner for the continuation of the project:
 - [x] Have clarity on [when to use Entities](https://taintedcoders.com/bevy/entities/)
 - [x] Add bevy inspector
 - [x] Understand Events in Bevy [(EventWriter and EventReader)](https://bevy-cheatbook.github.io/programming/events.html)
-- [ ] Switch to absolute position on screen (instead of window) of the ball
+- [x] Switch to absolute position on screen (instead of window) of the ball
 - [-] ~~Control ball with keyboard arrow keys~~ (WASD + key to turn off gravity)
 - [ ] Test collisions with Triangles and Squares [(add collisions)](https://kishimotostudios.com/articles/aabb_collision/)
 - [ ] Check out Tiled level editor
