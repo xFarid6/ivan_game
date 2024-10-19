@@ -1,7 +1,7 @@
 mod constants;
 
 use bevy::{
-   diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, math::bounding::{Aabb2d, BoundingCircle, BoundingVolume, IntersectsVolume}, prelude::*, render::view::window, sprite::MaterialMesh2dBundle, winit::WinitSettings
+   diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, math::bounding::{Aabb2d, BoundingCircle, BoundingVolume, IntersectsVolume}, prelude::*, render::{camera, view::window}, sprite::MaterialMesh2dBundle, winit::WinitSettings
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use rand::Rng;
@@ -25,7 +25,7 @@ fn main() {
       .add_systems(Startup, setup)
       .add_systems(Update, (fps_text_update_system, gravity_text_update_system))
       .add_systems(FixedUpdate, (
-                  (window_walls, mouse_click, apply_gravity, apply_velocity).chain(),
+                  (window_walls, reposition_ball_on_mouse_click, apply_gravity, apply_velocity).chain(),
                   (add_ball_random_pos, remove_temp_balls),
                   change_gravity,
                   camera_move_on_window_move
@@ -174,6 +174,7 @@ fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, time: Res<Time>
     }
 }
 
+// TODO: Fix after window movement
 // Add boundaries for the ball (screen)
 fn window_walls(
    mut query: Query<(&mut Transform, &mut Velocity, &Ball)>,
@@ -245,10 +246,13 @@ fn apply_gravity(
 }
 
 // Reposition ball on mouse-click position
-fn mouse_click(
+// The fix is to use a ParamSet. 
+// This allows you to define multiple queries that access the same component without conflicts,
+// ensuring that each query is disjoint.
+fn reposition_ball_on_mouse_click(
    mouse_button_input: Res<ButtonInput<MouseButton>>,
-   mut query: Query<&mut Transform, With<Ball>>,
    window: Query<&Window>,
+   mut ball_transform: Query<&mut Transform, With<Ball>>
 ) {
    if mouse_button_input.just_pressed(MouseButton::Left) {
       let Some(cursor_position) = window.single().cursor_position() else {
@@ -257,16 +261,56 @@ fn mouse_click(
 
       let (window_width, window_height) = getwindowsize(window);
 
-      let mut transform = query.single_mut();
+      let mut b_transform = ball_transform.single_mut();
 
-      transform.translation.x = cursor_position.x - (window_width / 2.);
+      b_transform.translation.x = cursor_position.x - (window_width / 2.);
 
       if cursor_position.y <= (window_height / 2.) {
-         transform.translation.y = (window_height / 2.) - cursor_position.y;
+         b_transform.translation.y = (window_height / 2.) - cursor_position.y;
       } else {
-         transform.translation.y = -(cursor_position.y - (window_height / 2.));
+         b_transform.translation.y = -(cursor_position.y - (window_height / 2.));
       }
    }
+}
+
+fn ball_to_mouse_click(
+   mouse_button_input: Res<ButtonInput<MouseButton>>,
+   mut param_set: ParamSet<(
+      Query<&mut Transform, With<Ball>>,
+      Query<&Transform, With<Camera>>,
+   )>,
+   windows: Query<&Window>,
+) {
+   // Early return condition
+   if ! mouse_button_input.just_pressed(MouseButton::Left) {
+      return;
+   }
+
+   let m_pos = windows.single().cursor_position().expect("Mouse in the window");
+   let window = windows.single();
+   let binding = param_set.p1();
+   let camera = binding.single();
+   let new_pos = window_to_world(m_pos, window, camera);
+   param_set.p0().single_mut().translation = Vec3 { x: new_pos.x, y: -new_pos.y, z: 1.};
+
+   // NOTE: using Rust’s destructuring syntax to unpack a Vec2 into separate variables
+   // let Vec2 { x: mx, y: my } = windows.get_single()
+   //       .expect("Didn't find exactly one window")
+   //       .cursor_position()
+   //       .expect("Didn't find the cursor in the window");
+   
+   // let window = windows.get_single().expect("Only one window");
+   // let binding = param_set.p1();
+   // let camera = binding.get_single().expect("Only one camera");
+   // let Vec3 { x: wmx, y: wmy, z: _ } = window_to_world(Vec2 { x: mx, y: my }, window, camera);
+
+   // param_set.p0().get_single_mut()
+   // .expect("Only one ball")
+   // .translation.x = wmx;
+
+   // param_set.p0().get_single_mut()
+   // .expect("Only one ball")
+   // .translation.y = wmy;
 }
 
 fn change_gravity(
@@ -501,5 +545,25 @@ fn get_window_coordinates(
    }
 
    (current_w_x, current_w_y)
+}
+
+fn window_to_world(
+   position: Vec2,
+   window: &Window,
+   camera: &Transform,
+) -> Vec3 {
+
+   // Center in screen space
+   let norm = Vec3::new(
+      position.x - window.width() / 2.,
+      position.y - window.height() / 2.,
+      0.,
+   );
+
+   // Apply camera transform
+   *camera * norm
+
+   // Alternatively:
+   //camera.mul_vec3(norm)
 }
 

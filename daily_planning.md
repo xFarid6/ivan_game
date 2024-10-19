@@ -13,6 +13,7 @@ Daily planner for the continuation of the project:
 - [x] Add bevy inspector
 - [x] Understand Events in Bevy [(EventWriter and EventReader)](https://bevy-cheatbook.github.io/programming/events.html)
 - [x] Switch to absolute position on screen (instead of window) of the ball
+- [x] Function to convert [from window to world coordinates](https://stackoverflow.com/questions/64714076/how-do-i-convert-screen-space-to-world-space-coords-in-bevy-using-camera2dcompon)
 - [-] ~~Control ball with keyboard arrow keys~~ (WASD + key to turn off gravity)
 - [ ] Test collisions with Triangles and Squares [(add collisions)](https://kishimotostudios.com/articles/aabb_collision/)
 - [ ] Check out Tiled level editor
