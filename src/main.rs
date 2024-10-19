@@ -28,7 +28,7 @@ fn main() {
                   (window_walls, reposition_ball_on_mouse_click, apply_gravity, apply_velocity).chain(),
                   (add_ball_random_pos, remove_temp_balls),
                   change_gravity,
-                  camera_move_on_window_move
+                  translate_everything_on_window_move
                ))
       .run();
 }
@@ -78,8 +78,17 @@ impl Default for LastWindowPos {
 }
 
 impl LastWindowPos {
-   fn position(&self) -> IVec2 {
+   fn get(&self) -> IVec2 {
       IVec2 { x: self.x, y: self.y }
+   }
+
+   fn is_default(&self) -> bool {
+      self.x == 0 && self.y == 0
+   }
+
+   fn set(&mut self, pos: IVec2) {
+      self.x = pos.x;
+      self.y = pos.y;
    }
 }
 
@@ -163,7 +172,8 @@ fn setup (
    ));
 
    // Init LastWindowPos Resource
-   commands.insert_resource(LastWindowPos{ x: 0, y: 0 });
+   // commands.insert_resource(LastWindowPos{ x: 0, y: 0 });
+   commands.init_resource::<LastWindowPos>();
 
 }
 
@@ -454,9 +464,8 @@ fn ball_collision(
 //    }
 // }
 
-
+// Works but breaks the ball_to_mouse logic
 fn camera_move_on_window_move(
-   mut win_move: EventReader<WindowMoved>, 
    window: Query<&Window>,
    mut last_win_pos: ResMut<LastWindowPos>,
    mut camera: Query<&mut Transform, With<Camera>>
@@ -479,14 +488,14 @@ fn camera_move_on_window_move(
       WindowPosition::Automatic => return,
       WindowPosition::Centered(_monitor_selection) => return,
       WindowPosition::At(ivec2) => {
-         if ivec2 == last_win_pos.position() {
+         if ivec2 == last_win_pos.get() {
             return;
          }
       },
    }
 
    // Get current window coordinates
-   let (mut current_w_x, mut current_w_y) = get_window_coordinates(window);
+   let (current_w_x, current_w_y) = get_window_coordinates(window);
 
    // Calculate the shift
    let last_w_x = last_win_pos.x;
@@ -509,6 +518,34 @@ fn camera_move_on_window_move(
    last_win_pos.y = current_w_y;
 }
 
+fn translate_everything_on_window_move(
+   mut win_move: EventReader<WindowMoved>, 
+   mut last_win_pos: ResMut<LastWindowPos>,
+   mut transforms: Query<&mut Transform, Without<Camera>>
+) {
+
+   for ev in win_move.read() {
+      // Set the value for the first time
+      if last_win_pos.is_default() {
+         last_win_pos.set(ev.position);
+         return;
+      }
+
+      // Get difference between last window position and current one
+      let move_on_x = ev.position.x - last_win_pos.x;
+      let move_on_y = ev.position.y - last_win_pos.y;
+
+      // Move everything by that difference
+      for mut item in &mut transforms {
+         item.translation.x -= move_on_x as f32;
+         item.translation.y += move_on_y as f32;
+      }
+
+      // Update the LastWinPos
+      last_win_pos.set(ev.position);
+   }
+}
+
 // Close the focused window whenever the escape key (<kbd>Esc</kbd>) is pressed
 //
 // This is useful for examples or prototyping.
@@ -528,6 +565,7 @@ pub fn close_on_esc(
    }
 }
 
+/// If available, gets the x and y of the bevy window on the screen
 fn get_window_coordinates(
    window: Query<&Window>
 ) -> (i32, i32){
