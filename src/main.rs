@@ -1,12 +1,20 @@
+// Modules
 mod constants;
 
+// Bevy
 use bevy::{
-   diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, math::bounding::{Aabb2d, BoundingCircle, BoundingVolume, IntersectsVolume}, prelude::*, render::{camera, view::window}, sprite::MaterialMesh2dBundle, winit::WinitSettings
+   diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, math::bounding::{Aabb2d, BoundingCircle, BoundingVolume, IntersectsVolume}, prelude::*, render::{mesh::{Mesh, PrimitiveTopology}, render_asset::RenderAssetUsages}, sprite::MaterialMesh2dBundle, winit::WinitSettings
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+
+// Std rust libraries
 use rand::Rng;
 use std::time::Duration;
 
+// Other libraries
+
+
+// Personal imports
 use constants::*;
 
 
@@ -17,9 +25,10 @@ fn main() {
          WinitSettings 
          {
             focused_mode: bevy::winit::UpdateMode::Continuous,
-            unfocused_mode: bevy::winit::UpdateMode::reactive_low_power(Duration::from_millis(10))
+            unfocused_mode: bevy::winit::UpdateMode::reactive_low_power(Duration::from_millis(1000))
          }
       )
+      // .insert_resource(WinitSettings::desktop_app())
       .add_plugins((DefaultPlugins, FrameTimeDiagnosticsPlugin))
       .add_plugins(WorldInspectorPlugin::new())
       .add_systems(Startup, setup)
@@ -28,7 +37,9 @@ fn main() {
                   (window_walls, reposition_ball_on_mouse_click, apply_gravity, apply_velocity).chain(),
                   (add_ball_random_pos, remove_temp_balls),
                   change_gravity,
-                  translate_everything_on_window_move
+                  translate_everything_on_window_move,
+                  draw_a_line_example,
+                  draw_cursor
                ))
       .run();
 }
@@ -605,3 +616,25 @@ fn window_to_world(
    //camera.mul_vec3(norm)
 }
 
+fn draw_a_line_example(mut gizmos: Gizmos) {
+   gizmos.line(Vec3::ZERO, Vec3::new(20., 20., 1.), Color::WHITE);
+}
+
+fn draw_cursor(
+   camera_query: Query<(&Camera, &GlobalTransform)>,
+   windows: Query<&Window>,
+   mut gizmos: Gizmos,
+) {
+   let (camera, camera_transform) = camera_query.single();
+
+   let Some(cursor_position) = windows.single().cursor_position() else {
+       return;
+   };
+
+   // Calculate a world position based on the cursor's position.
+   let Some(point) = camera.viewport_to_world_2d(camera_transform, cursor_position) else {
+       return;
+   };
+
+   gizmos.circle_2d(point, 10., Color::WHITE);
+}
