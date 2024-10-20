@@ -9,12 +9,10 @@ mod particles;
 
 // Bevy
 use bevy::{
-    color::palettes::css::PURPLE, 
-    core_pipeline::{
+    color::palettes::css::PURPLE, core_pipeline::{
         bloom::{BloomCompositeMode, BloomSettings},
         tonemapping::Tonemapping,
-    }, 
-    diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, render::mesh::Mesh, sprite::MaterialMesh2dBundle, winit::WinitSettings
+    }, diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, render::mesh::Mesh, sprite::MaterialMesh2dBundle, utils::dbg, winit::WinitSettings
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
@@ -31,18 +29,40 @@ use particles::*;
 use player::*;
 use ui::*;
 
+// A unit struct to help identify the Ball component
+#[derive(Component)]
+struct Ball;
+
+#[derive(Component, Debug)]
+struct TempBall;
+
+#[derive(Component, Deref, DerefMut, Debug, PartialEq)]
+struct Velocity(Vec2);
+
+#[derive(Debug, Resource)]
+struct Gravity {
+    x: f32,
+    y: f32,
+}
+
+#[derive(Component)]
+struct Triangle;
+
+#[derive(Component)]
+struct Collidable;
+
 fn main() {
     App::new()
-        .insert_resource(WinitSettings {
-            focused_mode: bevy::winit::UpdateMode::Continuous,
-            unfocused_mode: bevy::winit::UpdateMode::reactive_low_power(Duration::from_millis(
-                1000,
-            )),
-        })
+    .insert_resource(WinitSettings {
+        focused_mode: bevy::winit::UpdateMode::Continuous,
+        unfocused_mode: bevy::winit::UpdateMode::reactive_low_power(Duration::from_millis(
+            1000,
+        )),
+    })
         // .insert_resource(WinitSettings::desktop_app())
         .add_plugins((DefaultPlugins, FrameTimeDiagnosticsPlugin))
         .add_plugins(WorldInspectorPlugin::new())
-        .add_systems(Startup, (world_setup, ui_setup))
+        .add_systems(Startup, (world_setup, ui_setup, assets_setup))
         .add_systems(
             Update, 
             (
@@ -67,33 +87,11 @@ fn main() {
                 draw_a_line_example,
                 draw_cursor,
                 close_on_esc,
+                move_camera_on_mouse_wheel
             ),
         )
         .run();
 }
-
-// A unit struct to help identify the Ball component
-#[derive(Component)]
-struct Ball;
-
-#[derive(Component, Debug)]
-struct TempBall;
-
-#[derive(Component, Deref, DerefMut, Debug, PartialEq)]
-struct Velocity(Vec2);
-
-#[derive(Debug, Resource)]
-struct Gravity {
-    x: f32,
-    y: f32,
-}
-
-#[derive(Component)]
-struct Triangle;
-
-#[derive(Component)]
-struct Collidable;
-
 
 fn world_setup(
     mut commands: Commands,
@@ -200,6 +198,20 @@ fn world_setup(
     commands.init_resource::<LastWindowPos>();
 }
 
+fn assets_setup(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>
+) {
+    commands.spawn((
+        SpriteBundle {
+            texture: asset_server.load("icon.png"),
+            transform: Transform::from_xyz(100., 0., 2.),
+            ..default()
+        },
+    ));
+}
+
+
 fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, time: Res<Time>) {
     for (mut transform, velocity) in &mut query {
         transform.translation.x += velocity.x * time.delta_seconds();
@@ -262,34 +274,54 @@ fn apply_gravity(mut query: Query<&mut Velocity>, gravity: Res<Gravity>) {
     }
 }
 
+fn reposition_ball_on_mouse_click(
+    mouse_button_input: Res<ButtonInput<MouseButton>>,
+    camera_query: Query<(&Camera, &GlobalTransform)>,
+    window: Query<&Window>,
+    mut ball_transform: Query<&mut Transform, With<Ball>>,
+) {
+    // if mouse_button_input.just_pressed(MouseButton::Left) {
+    //     let Some(cursor_position) = window.single().cursor_position() else {
+    //         return;
+    //     };
+
+    //     let (window_width, window_height) = getwindowsize(window);
+
+    //     let mut b_transform = ball_transform.single_mut();
+
+    //     b_transform.translation.x = cursor_position.x - (window_width / 2.);
+
+    //     if cursor_position.y <= (window_height / 2.) {
+    //         b_transform.translation.y = (window_height / 2.) - cursor_position.y;
+    //     } else {
+    //         b_transform.translation.y = -(cursor_position.y - (window_height / 2.));
+    //     }
+    // }
+
+    if ! mouse_button_input.just_pressed(MouseButton::Left) {
+        return;
+    }
+
+    let (camera, camera_transform) = camera_query.single();
+
+    let Some(cursor_position) = window.single().cursor_position() else {
+        return;
+    };
+
+    // Calculate a world position based on the cursor's position.
+    let Some(point) = camera.viewport_to_world_2d(camera_transform, cursor_position) else {
+        return;
+    };
+
+    // Reposition the ball
+    let mut b_transform = ball_transform.single_mut();
+    b_transform.translation = Vec3 { x: point.x, y: point.y, ..default() };
+}
+
 // Reposition ball on mouse-click position
 // The fix is to use a ParamSet.
 // This allows you to define multiple queries that access the same component without conflicts,
 // ensuring that each query is disjoint.
-fn reposition_ball_on_mouse_click(
-    mouse_button_input: Res<ButtonInput<MouseButton>>,
-    window: Query<&Window>,
-    mut ball_transform: Query<&mut Transform, With<Ball>>,
-) {
-    if mouse_button_input.just_pressed(MouseButton::Left) {
-        let Some(cursor_position) = window.single().cursor_position() else {
-            return;
-        };
-
-        let (window_width, window_height) = getwindowsize(window);
-
-        let mut b_transform = ball_transform.single_mut();
-
-        b_transform.translation.x = cursor_position.x - (window_width / 2.);
-
-        if cursor_position.y <= (window_height / 2.) {
-            b_transform.translation.y = (window_height / 2.) - cursor_position.y;
-        } else {
-            b_transform.translation.y = -(cursor_position.y - (window_height / 2.));
-        }
-    }
-}
-
 fn ball_to_mouse_click(
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     mut param_set: ParamSet<(

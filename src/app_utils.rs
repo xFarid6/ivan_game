@@ -1,4 +1,9 @@
-use bevy::prelude::*;
+use bevy::{input::mouse::{MouseScrollUnit, MouseWheel}, prelude::*};
+
+
+// =========== CONSTANTS ===========
+const CAMERA_SCROLL_MULTIPLIER: f32 = 30.;
+
 
 // =========== STRUCTS ===========
 
@@ -31,6 +36,7 @@ impl LastWindowPos {
         self.y = pos.y;
     }
 }
+
 
 // =========== METHODS ===========
 
@@ -191,3 +197,22 @@ pub fn camera_move_on_window_move(
     last_win_pos.x = current_w_x;
     last_win_pos.y = current_w_y;
 }
+
+pub fn move_camera_on_mouse_wheel(
+    mut evr_scroll: EventReader<MouseWheel>,
+    mut camera: Query<&mut Transform, With<Camera>>
+) {
+    for ev in evr_scroll.read() {
+        match ev.unit {
+            MouseScrollUnit::Line => {
+                // println!("Scroll (line units): vertical: {}, horizontal: {}", ev.y, ev.x);
+                camera.get_single_mut().expect("More than one camera found").translation.y -= ev.y * CAMERA_SCROLL_MULTIPLIER;
+            }
+            MouseScrollUnit::Pixel => {
+                // println!("Scroll (pixel units): vertical: {}, horizontal: {}", ev.y, ev.x);
+                camera.get_single_mut().expect("More than one camera found").translation.y -= ev.y * CAMERA_SCROLL_MULTIPLIER;
+            }
+        }
+    }
+}
+
