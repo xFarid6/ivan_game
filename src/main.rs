@@ -6,6 +6,7 @@ mod constants;
 mod ui;
 mod player;
 mod particles;
+mod cards;
 
 // Bevy
 use bevy::{
@@ -18,7 +19,7 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 // Std rust libraries
 use rand::Rng;
-use std::time::Duration;
+use std::{collections::HashMap, fs, time::Duration};
 
 // Other libraries
 
@@ -28,6 +29,7 @@ use constants::*;
 use particles::*;
 use player::*;
 use ui::*;
+use cards::*;
 
 // A unit struct to help identify the Ball component
 #[derive(Component)]
@@ -53,16 +55,17 @@ struct Collidable;
 
 fn main() {
     App::new()
-    .insert_resource(WinitSettings {
-        focused_mode: bevy::winit::UpdateMode::Continuous,
-        unfocused_mode: bevy::winit::UpdateMode::reactive_low_power(Duration::from_millis(
-            1000,
-        )),
-    })
+        .insert_resource(WinitSettings {
+            focused_mode: bevy::winit::UpdateMode::Continuous,
+            unfocused_mode: bevy::winit::UpdateMode::reactive_low_power(Duration::from_millis(
+                1000,
+            )),
+        })
+        .insert_resource(CardHandles { cards_map: HashMap::new() } )
         // .insert_resource(WinitSettings::desktop_app())
         .add_plugins((DefaultPlugins, FrameTimeDiagnosticsPlugin))
         .add_plugins(WorldInspectorPlugin::new())
-        .add_systems(Startup, (world_setup, ui_setup, assets_setup))
+        .add_systems(Startup, (world_setup, ui_setup, assets_setup).chain())
         .add_systems(
             Update, 
             (
@@ -85,9 +88,11 @@ fn main() {
                 change_gravity,
                 translate_everything_on_window_move,
                 draw_a_line_example,
+                draw_xy_axis,
                 draw_cursor,
                 close_on_esc,
-                move_camera_on_mouse_wheel
+                move_camera_on_mouse_wheel,
+                spawn_random_card
             ),
         )
         .run();
@@ -200,7 +205,8 @@ fn world_setup(
 
 fn assets_setup(
     mut commands: Commands,
-    asset_server: Res<AssetServer>
+    asset_server: Res<AssetServer>,
+    card_handles: ResMut<CardHandles>
 ) {
     commands.spawn((
         SpriteBundle {
@@ -209,6 +215,8 @@ fn assets_setup(
             ..default()
         },
     ));
+
+    load_cards_pngs(asset_server, card_handles);
 }
 
 
@@ -266,7 +274,7 @@ fn window_walls(
     }
 }
 
-// Add gravity for making all balls fall
+/// Anything with a Velocity is subjected to Gravity on both axis
 fn apply_gravity(mut query: Query<&mut Velocity>, gravity: Res<Gravity>) {
     for mut velocity in &mut query {
         velocity.x += gravity.x;
@@ -322,6 +330,7 @@ fn reposition_ball_on_mouse_click(
 // The fix is to use a ParamSet.
 // This allows you to define multiple queries that access the same component without conflicts,
 // ensuring that each query is disjoint.
+#[deprecated(since="20/10's commit", note="please use `reposition_ball_on_mouse_click` instead")]
 fn ball_to_mouse_click(
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     mut param_set: ParamSet<(

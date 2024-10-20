@@ -31,3 +31,6 @@ Daily planner for the continuation of the project:
 Useful links:
 
 - [Color picker fore srgb](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_colors/Color_picker_tool) (bloom effect enabled)
+- [Rust macro for enum stringyfication](https://stackoverflow.com/questions/32710187/how-do-i-get-an-enum-as-a-string)
+
+

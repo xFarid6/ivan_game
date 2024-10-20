@@ -1,4 +1,4 @@
-use bevy::{core_pipeline::bloom::{BloomCompositeMode, BloomSettings}, diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, prelude::*};
+use bevy::{color::palettes::{css::*, tailwind::*}, core_pipeline::bloom::{BloomCompositeMode, BloomSettings}, diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, prelude::*};
 
 use crate::Gravity;
 
@@ -95,6 +95,14 @@ pub fn gravity_text_update_system(
 
 pub fn draw_a_line_example(mut gizmos: Gizmos) {
     gizmos.line(Vec3::ZERO, Vec3::new(20., 20., 1.), Color::WHITE);
+}
+
+pub fn draw_xy_axis(mut gizmos: Gizmos) {
+    // X axis
+    gizmos.line(Vec3::new(-50000., 0., 1.), Vec3::new(50000., 0., 1.), Color::from(RED_400));
+
+    // Y axis
+    gizmos.line(Vec3::new(0., -50000., 1.), Vec3::new(0., 50000., 1.), Color::from(BLUE_900));
 }
 
 pub fn draw_cursor(
