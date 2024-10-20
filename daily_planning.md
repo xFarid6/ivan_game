@@ -18,8 +18,16 @@ Daily planner for the continuation of the project:
 - [ ] Test collisions with Triangles and Squares [(add collisions)](https://kishimotostudios.com/articles/aabb_collision/)
 - [ ] Check out Tiled level editor
 - [ ] Get started working on the player (his file, structs, functions, sprites, ...)
-- [ ] On [using bundles](https://bevy-cheatbook.github.io/programming/bundle.html)
+- [x] On [using bundles](https://bevy-cheatbook.github.io/programming/bundle.html)
 - [ ] Test out some particle systems
 - [ ] Make a navigation for the app
 - [ ] Get started on some UI elements (possibly reusables) 
-- [ ] Learn how to [add bloom to shapes](https://bevyengine.org/examples/2d-rendering/bloom-2d/)
+- [x] Learn how to [add bloom to shapes](https://bevyengine.org/examples/2d-rendering/bloom-2d/)
+
+
+----
+
+
+Useful links:
+
+- [Color picker fore srgb](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_colors/Color_picker_tool) (bloom effect enabled)

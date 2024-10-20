@@ -9,6 +9,7 @@ mod particles;
 
 // Bevy
 use bevy::{
+    color::palettes::css::PURPLE, 
     core_pipeline::{
         bloom::{BloomCompositeMode, BloomSettings},
         tonemapping::Tonemapping,
@@ -170,6 +171,24 @@ fn world_setup(
         // 4. Put something bright in a dark environment to see the effect
         material: materials.add(Color::srgb(6.25, 9.4, 9.1)),
         transform: Transform::from_translation(Vec3::new(200., 0., 0.)),
+        ..default()
+    });
+
+    // Octagon mesh
+    commands.spawn(MaterialMesh2dBundle {
+        mesh: meshes.add(RegularPolygon::new(100., 8)).into(),
+        // 4. Put something bright in a dark environment to see the effect
+        material: materials.add(Color::from(PURPLE)),
+        transform: Transform::from_translation(Vec3::new(400., 0., 0.)),
+        ..default()
+    });
+
+    // Square mesh
+    commands.spawn(MaterialMesh2dBundle {
+        mesh: meshes.add(RegularPolygon::new(100., 4)).into(),
+        // 4. Put something bright in a dark environment to see the effect
+        material: materials.add(Color::srgb(7.26, 6.84, 5.54)),
+        transform: Transform::from_translation(Vec3::new(-450., 0., 0.)),
         ..default()
     });
 
