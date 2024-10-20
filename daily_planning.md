@@ -17,3 +17,7 @@ Daily planner for the continuation of the project:
 - [-] ~~Control ball with keyboard arrow keys~~ (WASD + key to turn off gravity)
 - [ ] Test collisions with Triangles and Squares [(add collisions)](https://kishimotostudios.com/articles/aabb_collision/)
 - [ ] Check out Tiled level editor
+- [ ] Get started working on the player (his file, structs, functions, sprites, ...)
+- [ ] Test out some particle systems
+- [ ] Make a navigation for the app
+- [ ] Get started on some UI elements (possibly reusables) 

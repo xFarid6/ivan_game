@@ -1,3 +1,4 @@
+#[allow(unused_variables)]
 use bevy::prelude::{Vec2, Vec3};
 
 pub const HELLO_BEVY: &'static str = "Hello Bevy!";
