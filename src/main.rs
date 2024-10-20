@@ -63,9 +63,24 @@ fn main() {
         })
         .insert_resource(CardHandles { cards_map: HashMap::new() } )
         // .insert_resource(WinitSettings::desktop_app())
-        .add_plugins((DefaultPlugins, FrameTimeDiagnosticsPlugin))
+        .add_plugins(
+            (
+                DefaultPlugins.set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "something other than \"Bevy App\"".to_string(),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }), 
+                FrameTimeDiagnosticsPlugin
+            ))
         .add_plugins(WorldInspectorPlugin::new())
-        .add_systems(Startup, (world_setup, ui_setup, assets_setup).chain())
+        .add_systems(
+            Startup, 
+            (
+                (world_setup, ui_setup, assets_setup).chain(),
+                spawn_emitter
+            ))
         .add_systems(
             Update, 
             (
@@ -82,17 +97,19 @@ fn main() {
                     reposition_ball_on_mouse_click,
                     apply_gravity,
                     apply_velocity,
-                )
-                    .chain(),
+                ).chain(),
                 (add_ball_random_pos, remove_temp_balls),
                 change_gravity,
-                translate_everything_on_window_move,
-                draw_a_line_example,
-                draw_xy_axis,
-                draw_cursor,
+                (translate_everything_on_window_move, move_camera_on_mouse_wheel),
+                (draw_a_line_example, draw_xy_axis, draw_cursor),
+                (
+                    emitter_system, particle_movement_system,
+                    particle_lifetime_system, particle_fade_system, 
+                    particle_size_scaling_system, particle_gravity_system,
+                    move_emitter
+                ).chain(),
+                spawn_random_card,
                 close_on_esc,
-                move_camera_on_mouse_wheel,
-                spawn_random_card
             ),
         )
         .run();
@@ -206,17 +223,24 @@ fn world_setup(
 fn assets_setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    card_handles: ResMut<CardHandles>
+    card_handles: ResMut<CardHandles>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
+    let icon_handle: Handle<Image> = asset_server.load("icon.png");
+    let stars_handle: Handle<Image> = asset_server.load("star.png");
+
     commands.spawn((
         SpriteBundle {
-            texture: asset_server.load("icon.png"),
-            transform: Transform::from_xyz(100., 0., 2.),
+            texture: icon_handle.clone(),
+            transform: Transform::from_xyz(100., -100., 2.),
             ..default()
         },
     ));
 
     load_cards_pngs(asset_server, card_handles);
+
+    // Store the material handle as a resource
+    commands.insert_resource(ParticleMaterialHandle(stars_handle));
 }
 
 

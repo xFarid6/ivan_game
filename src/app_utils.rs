@@ -216,3 +216,20 @@ pub fn move_camera_on_mouse_wheel(
     }
 }
 
+pub fn get_mouse_position(
+    camera_query: Query<(&Camera, &GlobalTransform)>,
+    window: Query<&Window>,
+) -> Option<Vec2>{
+    let (camera, camera_transform) = camera_query.single();
+
+    let Some(cursor_position) = window.single().cursor_position() else {
+        return None;
+    };
+
+    // Calculate a world position based on the cursor's position.
+    let Some(point) = camera.viewport_to_world_2d(camera_transform, cursor_position) else {
+        return None;
+    };
+
+    Some(point)
+}

@@ -26,7 +26,7 @@ struct PlayerBundle {
     sprite: SpriteBundle,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Health {
     hp: f32,
     extra: f32
@@ -40,6 +40,7 @@ pub struct PlayerName(String);
 
 #[derive(Component)]
 pub struct Player;
+
 
 // ====== METHODS ======
 

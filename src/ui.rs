@@ -1,6 +1,6 @@
 use bevy::{color::palettes::{css::*, tailwind::*}, core_pipeline::bloom::{BloomCompositeMode, BloomSettings}, diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, prelude::*};
 
-use crate::Gravity;
+use crate::{Gravity, Health};
 
 // ====== STRUCTS ======
 // A unit struct to help identify the FPS UI component, since there may be many Text components
@@ -12,6 +12,19 @@ pub struct GravityText;
 
 #[derive(Component)]
 pub struct BloomUIText;
+
+#[derive(Component, Debug)]
+struct BloomEffect(bool);
+
+#[derive(Component, Debug)]
+struct HealthBar;
+
+#[derive(Debug, Bundle)]
+struct HealthBarBundle {
+    sprite: SpriteBundle,
+    health_bar: HealthBar,
+    bloom: BloomEffect,
+}
 
 // ====== METHODS ======
 
@@ -243,3 +256,7 @@ pub fn update_bloom_settings(
         }
     }
 }
+
+
+// Approach 1: makeup a healthbar from gizmos and redraw it every frame
+// Approach 2: make the health bar a bundle, spawn it once and let bevy render it every frame

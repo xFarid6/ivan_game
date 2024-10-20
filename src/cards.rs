@@ -1,6 +1,7 @@
 use std::{collections::HashMap, fs};
 
 use bevy::prelude::*;
+use rand::{seq::SliceRandom, thread_rng, Rng};
 
 #[macro_export]
 macro_rules! enum_str {
@@ -98,6 +99,8 @@ pub const CARD_NAMES_ARRAY: [&str; 56] = ["10_of_clubs",
                                 "red_joker"
 ];
 
+// ====== STRUCTS ======
+
 #[derive(Resource)]
 pub struct CardHandles {
     pub cards_map: HashMap<String, Handle<Image>>,
@@ -139,6 +142,9 @@ struct CardBundle {
     suit: Suit,
     front: SpriteBundle,
 }
+
+
+// ====== METHODS ======
 
 
 pub fn load_cards_pngs(
@@ -208,7 +214,11 @@ pub fn int_to_string(n: u8) -> String {
     ans.to_string()
 }
 
-pub fn spawn_card(card_name: String, mut commands: Commands, card_handles: Res<CardHandles>) {
+pub fn spawn_card(
+    card_name: String, 
+    mut commands: Commands, 
+    card_handles: Res<CardHandles>
+) {
     // Card name example: 7_of_clubs
     let suit_part: Vec<_> = card_name.split("_").collect();
     let card_suit = suit_part.last().expect("Maybe vec was empty?");
@@ -242,7 +252,16 @@ pub fn spawn_random_card(
     card_handles: Res<CardHandles>,
     keyboard_input: Res<ButtonInput<KeyCode>>
 ) {
-    if keyboard_input.pressed(KeyCode::KeyC) {
-        spawn_card("king_of_spades".to_owned(), commands, card_handles);
-    }
+    if !keyboard_input.just_released(KeyCode::KeyC) { return; }
+
+    let invalid_cards = ["back", "back@2x", "black_joker", "red_joker"];
+
+    let mut rng = rand::thread_rng();
+
+    while let Some(card_name) = CARD_NAMES_ARRAY.choose(&mut rng){
+        if !invalid_cards.contains(card_name) {
+            spawn_card(card_name.to_owned().to_owned(), commands, card_handles);
+            return;
+        }
+    };    
 }
