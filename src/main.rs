@@ -4,14 +4,16 @@
 mod app_utils;
 mod constants;
 mod ui;
+mod player;
+mod particles;
 
 // Bevy
 use bevy::{
-    diagnostic::FrameTimeDiagnosticsPlugin,
-    prelude::*,
-    render::mesh::Mesh,
-    sprite::MaterialMesh2dBundle,
-    winit::WinitSettings,
+    core_pipeline::{
+        bloom::{BloomCompositeMode, BloomSettings},
+        tonemapping::Tonemapping,
+    }, 
+    diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, render::mesh::Mesh, sprite::MaterialMesh2dBundle, winit::WinitSettings
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
@@ -24,6 +26,8 @@ use std::time::Duration;
 // Personal imports
 use app_utils::*;
 use constants::*;
+use particles::*;
+use player::*;
 use ui::*;
 
 fn main() {
@@ -37,8 +41,15 @@ fn main() {
         // .insert_resource(WinitSettings::desktop_app())
         .add_plugins((DefaultPlugins, FrameTimeDiagnosticsPlugin))
         .add_plugins(WorldInspectorPlugin::new())
-        .add_systems(Startup, setup)
-        .add_systems(Update, (fps_text_update_system, gravity_text_update_system))
+        .add_systems(Startup, (world_setup, ui_setup))
+        .add_systems(
+            Update, 
+            (
+                fps_text_update_system, 
+                gravity_text_update_system,
+                update_bloom_settings
+            )
+        )
         .add_systems(
             FixedUpdate,
             (
@@ -82,13 +93,24 @@ struct Triangle;
 #[derive(Component)]
 struct Collidable;
 
-fn setup(
+
+fn world_setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     // Camera
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn((
+        Camera2dBundle {
+            camera: Camera {
+                hdr: true, // 1. HDR is required for bloom
+                ..default()
+            },
+            tonemapping: Tonemapping::TonyMcMapface, // 2. Using a tonemapper that desaturates to white is recommended
+            ..default()
+        },
+        BloomSettings::default(), // 3. Enable bloom for the camera
+    ));
 
     // Ball
     commands.spawn((
@@ -103,6 +125,15 @@ fn setup(
         Velocity(INITIAL_BALL_DIRECTION.normalize() * BALL_SPEED),
     ));
 
+    // Circle mesh
+    commands.spawn(MaterialMesh2dBundle {
+        mesh: meshes.add(Circle::new(100.)).into(),
+        // 4. Put something bright in a dark environment to see the effect
+        material: materials.add(Color::srgb(7.5, 0.0, 7.5)),
+        transform: Transform::from_translation(Vec3::new(-200., 0., 0.)),
+        ..default()
+    });
+
     // Triangle
     commands.spawn((
         MaterialMesh2dBundle {
@@ -113,8 +144,7 @@ fn setup(
                     Vec2::new(50.0, -50.0),
                 ))
                 .into(),
-            material: materials.add(Color::srgb(1., 0., 0.)),
-            // transform: Transform::from_translation(Vec3 { x: 0., y: 0., z: 1. }),
+            material: materials.add(Color::srgb_u8(255, 0, 0)),
             transform: Transform {
                 translation: Vec3 {
                     x: 0.,
@@ -134,46 +164,17 @@ fn setup(
         Collidable,
     ));
 
+    // Hexagon mesh
+    commands.spawn(MaterialMesh2dBundle {
+        mesh: meshes.add(RegularPolygon::new(100., 6)).into(),
+        // 4. Put something bright in a dark environment to see the effect
+        material: materials.add(Color::srgb(6.25, 9.4, 9.1)),
+        transform: Transform::from_translation(Vec3::new(200., 0., 0.)),
+        ..default()
+    });
+
     // Gravity
     commands.insert_resource(Gravity { x: 0., y: -1. });
-
-    // FPS Text
-    commands.spawn((
-        TextBundle::from_section(
-            "FPS: ",
-            TextStyle {
-                font_size: 30.,
-                ..default()
-            },
-        )
-        .with_text_justify(JustifyText::Left)
-        .with_style(Style {
-            position_type: PositionType::Absolute,
-            bottom: Val::Px(5.),
-            right: Val::Px(50.),
-            ..default()
-        }),
-        FpsText,
-    ));
-
-    // Gravity Text
-    commands.spawn((
-        TextBundle::from_section(
-            "Gravity values: ",
-            TextStyle {
-                font_size: 30.,
-                ..default()
-            },
-        )
-        .with_text_justify(JustifyText::Left)
-        .with_style(Style {
-            position_type: PositionType::Absolute,
-            bottom: Val::Px(50.),
-            right: Val::Px(50.),
-            ..default()
-        }),
-        GravityText,
-    ));
 
     // Init LastWindowPos Resource
     // commands.insert_resource(LastWindowPos{ x: 0, y: 0 });
@@ -392,25 +393,6 @@ fn remove_temp_balls(
     }
 }
 
-fn draw_a_line_example(mut gizmos: Gizmos) {
-    gizmos.line(Vec3::ZERO, Vec3::new(20., 20., 1.), Color::WHITE);
-}
 
-fn draw_cursor(
-    camera_query: Query<(&Camera, &GlobalTransform)>,
-    windows: Query<&Window>,
-    mut gizmos: Gizmos,
-) {
-    let (camera, camera_transform) = camera_query.single();
 
-    let Some(cursor_position) = windows.single().cursor_position() else {
-        return;
-    };
 
-    // Calculate a world position based on the cursor's position.
-    let Some(point) = camera.viewport_to_world_2d(camera_transform, cursor_position) else {
-        return;
-    };
-
-    gizmos.circle_2d(point, 10., Color::WHITE);
-}
