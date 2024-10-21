@@ -34,3 +34,33 @@ Useful links:
 - [Rust macro for enum stringyfication](https://stackoverflow.com/questions/32710187/how-do-i-get-an-enum-as-a-string)
 
 
+**Meshes and Materials: What are they?**
+In the context of 3D graphics and game development, particularly in engines like Bevy, meshes and materials serve different but complementary purposes. Here’s a breakdown of the differences between them:
+
+Meshes
+Definition: A mesh is a collection of vertices, edges, and faces that define the shape of a 3D object in space. It represents the geometric structure of an object.
+
+Components:
+
+Vertices: Points in 3D space that define the corners of the mesh.
+Faces: Flat surfaces that are formed by connecting vertices. These can be triangles or quadrilaterals.
+Normals: Vectors perpendicular to the surface of the mesh that are used for lighting calculations.
+UV Coordinates: Coordinates that map points on the mesh to points on a texture, allowing for detailed surface texturing.
+Purpose: Meshes define the shape and structure of 3D models. For example, a character model, an environment prop, or any object in a game is represented by a mesh.
+
+Materials
+Definition: A material defines the surface properties of a mesh, such as its color, texture, reflectivity, transparency, and how it interacts with light.
+
+Components:
+
+Texture: An image that is applied to the surface of a mesh to give it detail and color.
+Color: Base color information that can be applied to the mesh.
+Shader: Programs that dictate how the material should respond to lighting, shadows, and other visual effects. Shaders can implement various rendering techniques (like diffuse, specular, or normal mapping).
+Purpose: Materials determine the appearance of a mesh. They define how light interacts with the surface, the surface's texture, and its overall color, making the mesh look realistic or stylized in a game environment.
+
+Relationship Between Meshes and Materials
+Combination: In a typical rendering pipeline, you will have a mesh (the geometry) that is paired with a material (the appearance). When you render an object, the graphics engine will use both the mesh and its associated material to produce the final image on the screen.
+
+Reusability: You can use the same material with different meshes to maintain a consistent look across different objects. Conversely, you can apply different materials to the same mesh to achieve various visual effects.
+
+Rendering: During rendering, the graphics engine will first draw the mesh to the screen and then apply the material properties to determine how that mesh looks based on lighting and other scene factors.

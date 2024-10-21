@@ -35,6 +35,18 @@ pub struct ParticleEmitter {
 #[derive(Debug, Resource)]
 pub struct ParticleMaterialHandle(pub Handle<Image>);
 
+#[derive(Debug, Component)]
+pub struct MovingPoint {
+    speed: f32, // Speed of movement
+    amplitude: f32, // Amplitude of the sine wave
+    phase: f32, // Phase offset for the sine wave
+}
+
+#[derive(Component, Debug)]
+pub struct Path {
+    points: Vec<Vec2>,
+}
+
 // ====== METHODS ======
 
 pub fn spawn_emitter(mut commands: Commands) {
@@ -49,10 +61,16 @@ pub fn spawn_emitter(mut commands: Commands) {
         //     ..default()
         // },
         GlobalTransform::default(),
+        MovingPoint {
+            speed: 5.0,          // Speed of the point
+            amplitude: 200.0,    // Amplitude of the sine wave
+            phase: 0.0,          // Start phase
+        },
+        Path { points: Vec::new() },
     ));
 }
 
-pub fn move_emitter(
+pub fn move_emitter_with_mouse(
     camera_query: Query<(&Camera, &GlobalTransform)>,
     window: Query<&Window>, 
     mut emitter: Query<(&mut Transform, &ParticleEmitter)>
@@ -64,6 +82,34 @@ pub fn move_emitter(
     } else {
         return;
     };
+}
+
+pub fn move_point(
+    time: Res<Time>,
+    mut query: Query<(&mut Transform, &mut MovingPoint, &mut Path)>,
+) {
+    for (mut transform, mut moving_point, mut path) in query.iter_mut() {
+        // Update the phase based on speed and time
+        transform.translation.x += moving_point.speed * time.delta_seconds();
+        
+        // Calculate new Y position using the sine function
+        transform.translation.y = moving_point.amplitude * (moving_point.phase).sin();
+        
+        // Update the phase for the next frame
+        moving_point.phase += moving_point.speed * time.delta_seconds();
+
+        // Store the current position in the path
+        path.points.push(transform.translation.truncate());
+    }
+}
+
+pub fn draw_path(
+    mut commands: Commands,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    path_query: Query<&Path>,
+    mut meshes: ResMut<Assets<Mesh>>,
+) {
+    return;
 }
 
 pub fn emitter_system(

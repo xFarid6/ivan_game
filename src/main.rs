@@ -106,7 +106,7 @@ fn main() {
                     emitter_system, particle_movement_system,
                     particle_lifetime_system, particle_fade_system, 
                     particle_size_scaling_system, particle_gravity_system,
-                    move_emitter
+                    move_point, draw_path
                 ).chain(),
                 spawn_random_card,
                 close_on_esc,
