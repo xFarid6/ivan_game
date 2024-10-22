@@ -7,7 +7,7 @@ mod ui;
 mod player;
 mod particles;
 mod cards;
-mod appstate;
+mod app_state;
 
 // Bevy
 use bevy::{
@@ -31,7 +31,7 @@ use particles::*;
 use player::*;
 use ui::*;
 use cards::*;
-use appstate::*;
+use app_state::*;
 
 // A unit struct to help identify the Ball component
 #[derive(Component)]
@@ -118,10 +118,20 @@ fn main() {
         
         // ADD SYSTEMS
         // special schedules (generated on State existance)
-        .add_systems(OnEnter(AppState::Scene2), (
-            some_weird_fn,
-            some_weird_fn,
+        .add_systems(OnEnter(AppState::Scene1), (
+            my_placeholder_fn,
         ))
+        .add_systems(OnExit(AppState::Scene1), cleanup_scene1)
+
+        .add_systems(OnEnter(AppState::Scene2), (
+            my_placeholder_fn,
+        ))
+        .add_systems(OnExit(AppState::Scene2), cleanup_scene2)
+
+        .add_systems(OnEnter(AppState::PauseMenu), (
+            my_placeholder_fn,
+        ))
+        .add_systems(OnExit(AppState::PauseMenu), cleanup_pause_menu)
 
         // normal schedules
         .add_systems
