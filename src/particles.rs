@@ -49,7 +49,7 @@ pub struct Path {
 
 // ====== METHODS ======
 
-pub fn spawn_emitter(mut commands: Commands) {
+pub fn spawn_emitter_scene1(mut commands: Commands) {
     commands.spawn((
         ParticleEmitter {
             spawn_rate: 20.0, // 10 particles per second

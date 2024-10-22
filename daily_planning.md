@@ -23,7 +23,12 @@ Daily planner for the continuation of the project:
 - [ ] Make a navigation for the app
 - [ ] Get started on some UI elements (possibly reusables) 
 - [x] Learn how to [add bloom to shapes](https://bevyengine.org/examples/2d-rendering/bloom-2d/)
-
+- [ ] Make various types of particles 
+- [ ] Make a world for a game (I'd go pixel art, 2D, lateral movement) as a tilemap
+- [ ] Import it with the bevy_ecs_tilemap plugin
+- [ ] Add a "Scene" stack
+- [ ] Add parallax scrolling
+- [ ] Setup camera for pixel perfect rendering
 
 ----
 
@@ -32,7 +37,9 @@ Useful links:
 
 - [Color picker fore srgb](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_colors/Color_picker_tool) (bloom effect enabled)
 - [Rust macro for enum stringyfication](https://stackoverflow.com/questions/32710187/how-do-i-get-an-enum-as-a-string)
-
+- [Undestanding the Bevy UI](https://taintedcoders.com/bevy/ui)
+- [Understanding time and timers](https://bevy-cheatbook.github.io/fundamentals/time.html)
+- Here's where we're actually going to [MAKE THE MAPS](https://www.spritefusion.com/editor)
 
 **Meshes and Materials: What are they?**
 In the context of 3D graphics and game development, particularly in engines like Bevy, meshes and materials serve different but complementary purposes. Here’s a breakdown of the differences between them:

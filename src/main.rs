@@ -7,6 +7,7 @@ mod ui;
 mod player;
 mod particles;
 mod cards;
+mod appstate;
 
 // Bevy
 use bevy::{
@@ -30,6 +31,7 @@ use particles::*;
 use player::*;
 use ui::*;
 use cards::*;
+use appstate::*;
 
 // A unit struct to help identify the Ball component
 #[derive(Component)]
@@ -53,21 +55,20 @@ struct Triangle;
 #[derive(Component)]
 struct Collidable;
 
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+struct MyWeirdSet; // Sets are just a reference name, not an actual grouping
+
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+struct Scene1Set;
+
 fn main() {
     App::new()
-        .insert_resource(WinitSettings {
-            focused_mode: bevy::winit::UpdateMode::Continuous,
-            unfocused_mode: bevy::winit::UpdateMode::reactive_low_power(Duration::from_millis(
-                1000,
-            )),
-        })
-        .insert_resource(CardHandles { cards_map: HashMap::new() } )
-        // .insert_resource(WinitSettings::desktop_app())
+        // PLUGINS
         .add_plugins(
             (
                 DefaultPlugins.set(WindowPlugin {
                     primary_window: Some(Window {
-                        title: "something other than \"Bevy App\"".to_string(),
+                        title: "Something other than \"Bevy App\"".to_string(),
                         ..Default::default()
                     }),
                     ..Default::default()
@@ -75,47 +76,104 @@ fn main() {
                 FrameTimeDiagnosticsPlugin
             ))
         .add_plugins(WorldInspectorPlugin::new())
-        .add_systems(
+
+        // RESOURCES - must be initialized after the Default Plugins (else weird crashes happen)
+        .insert_resource(WinitSettings {
+            focused_mode: bevy::winit::UpdateMode::Continuous,
+            unfocused_mode: bevy::winit::UpdateMode::reactive_low_power(Duration::from_millis(
+                1000,
+            )),
+        })
+        // .insert_resource(WinitSettings::desktop_app())
+        .insert_resource(CardHandles { cards_map: HashMap::new() } )
+        .insert_resource(SceneStack::new(AppState::Scene1))  // Start with Scene 1
+        .insert_state(AppState::Scene1)
+
+        // SYSTEM CONFIGURATIONS    
+        .configure_sets
+        (
             Startup, 
             (
-                (world_setup, ui_setup, assets_setup).chain(),
-                spawn_emitter
-            ))
-        .add_systems(
-            Update, 
-            (
-                fps_text_update_system, 
-                gravity_text_update_system,
-                update_bloom_settings
+                MyWeirdSet.run_if(in_state(AppState::Scene1)),
+                Scene1Set.run_if(in_state(AppState::Scene1))
             )
         )
-        .add_systems(
-            FixedUpdate,
+        .configure_sets
+        (
+            Update, 
             (
-                (
-                    window_walls,
-                    reposition_ball_on_mouse_click,
-                    apply_gravity,
-                    apply_velocity,
-                ).chain(),
-                (add_ball_random_pos, remove_temp_balls),
-                change_gravity,
-                (translate_everything_on_window_move, move_camera_on_mouse_wheel),
-                (draw_a_line_example, draw_xy_axis, draw_cursor),
-                (
-                    emitter_system, particle_movement_system,
-                    particle_lifetime_system, particle_fade_system, 
-                    particle_size_scaling_system, particle_gravity_system,
-                    move_point, draw_path
-                ).chain(),
-                spawn_random_card,
-                close_on_esc,
+                MyWeirdSet.run_if(in_state(AppState::Scene1)), // Configured to be able to run but not called
+                Scene1Set.run_if(in_state(AppState::Scene1))
+            )
+        )
+        .configure_sets
+        (
+            FixedUpdate, 
+            (
+                MyWeirdSet.run_if(in_state(AppState::Scene1)), // Configured to be able to run but not called
+                Scene1Set.run_if(in_state(AppState::Scene1))
+            )
+        )
+
+        
+        // ADD SYSTEMS
+        // special schedules (generated on State existance)
+        .add_systems(OnEnter(AppState::Scene2), (
+            some_weird_fn,
+            some_weird_fn,
+        ))
+
+        // normal schedules
+        .add_systems
+        (
+            Startup, 
+            (
+                assets_setup,
+                (world_setup_scene1, ui_setup_scene1, spawn_emitter_scene1).chain().in_set(Scene1Set),
+                (some_weird_fn, some_weird_fn).in_set(MyWeirdSet)
+            )
+        )
+        .add_systems
+        (
+            Update, 
+            (
+                handle_scene_switch, // one time event, oneshot system
+                (fps_text_update_system, 
+                gravity_text_update_system,
+                update_bloom_settings,).in_set(Scene1Set)
             ),
         )
+        .add_systems
+        (
+            FixedUpdate,
+            (
+                close_on_esc, // one time event
+                (
+                    (
+                        window_walls,
+                        reposition_ball_on_mouse_click,
+                        apply_gravity,
+                        apply_velocity,
+                    ).chain(),
+                    (add_ball_random_pos, remove_temp_balls),
+                    change_gravity,
+                    (translate_everything_on_window_move, move_camera_on_mouse_wheel),
+                    (draw_a_line_example, draw_xy_axis, draw_cursor),
+                    (
+                        emitter_system, particle_movement_system,
+                        particle_lifetime_system, particle_fade_system, 
+                        particle_size_scaling_system, particle_gravity_system,
+                        move_point, draw_path
+                    ).chain(),
+                    spawn_random_card,
+                ).in_set(Scene1Set)
+            ),
+        )
+
         .run();
 }
 
-fn world_setup(
+fn world_setup_scene1(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -223,11 +281,11 @@ fn world_setup(
 fn assets_setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    card_handles: ResMut<CardHandles>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    card_handles: ResMut<CardHandles>
 ) {
     let icon_handle: Handle<Image> = asset_server.load("icon.png");
-    let stars_handle: Handle<Image> = asset_server.load("star.png");
+    let stars_handle: Handle<Image> = asset_server.load("particles/star.png");
+
 
     commands.spawn((
         SpriteBundle {

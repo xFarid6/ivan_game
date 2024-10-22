@@ -28,7 +28,7 @@ struct HealthBarBundle {
 
 // ====== METHODS ======
 
-pub fn ui_setup(
+pub fn ui_setup_scene1(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
