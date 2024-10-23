@@ -138,7 +138,7 @@ fn main() {
         (
             Startup, 
             (
-                assets_setup,
+                assets_setup, world_setup,
                 (world_setup_scene1, ui_setup_scene1, spawn_emitter_scene1).chain().in_set(Scene1Set),
                 (some_weird_fn, some_weird_fn).in_set(MyWeirdSet)
             )
@@ -183,11 +183,7 @@ fn main() {
         .run();
 }
 
-fn world_setup_scene1(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
+fn world_setup(mut commands: Commands,) {
     // Camera
     commands.spawn((
         Camera2dBundle {
@@ -201,6 +197,19 @@ fn world_setup_scene1(
         BloomSettings::default(), // 3. Enable bloom for the camera
     ));
 
+    // Gravity
+    commands.insert_resource(Gravity { x: 0., y: -1. });
+
+    // Init LastWindowPos Resource
+    // commands.insert_resource(LastWindowPos{ x: 0, y: 0 });
+    commands.init_resource::<LastWindowPos>();
+}
+
+fn world_setup_scene1(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
     // Ball
     commands.spawn((
         MaterialMesh2dBundle {
@@ -278,14 +287,7 @@ fn world_setup_scene1(
         material: materials.add(Color::srgb(7.26, 6.84, 5.54)),
         transform: Transform::from_translation(Vec3::new(-450., 0., 0.)),
         ..default()
-    });
-
-    // Gravity
-    commands.insert_resource(Gravity { x: 0., y: -1. });
-
-    // Init LastWindowPos Resource
-    // commands.insert_resource(LastWindowPos{ x: 0, y: 0 });
-    commands.init_resource::<LastWindowPos>();
+    });    
 }
 
 fn assets_setup(

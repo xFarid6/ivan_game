@@ -1,7 +1,12 @@
+cargo-features = ["profile-rustflags"]
+
 [package]
 name = "ivan_game"
 version = "0.1.0"
 edition = "2021"
+description = "A fun Bevy game made with Rust."
+repository = "https://github.com/xFarid6/ivan_game"  # replace with your actual repo URL
+license = "MIT"  # or your preferred license
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -16,7 +21,23 @@ resolver = "2" # Important! wgpu/Bevy needs this!
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]
 opt-level = 1
+rustflags = ["--cfg", "web_sys_unstable_apis"]
 
 # Enable a large amount of optimization in the dev profile for dependencies.
 [profile.dev.package."*"]
 opt-level = 3
+
+[lib]
+path = "src/main.rs"
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+rustflags = ["--cfg", "web_sys_unstable_apis"]
+
+# Serving the Files
+# When you run a local web server, you would point it to the www/ directory 
+# (or the name you chose). For example, if you use http-server, you would 
+# navigate to your project directory and run:
+
+# npx http-server www
+# Then, you can access your game in the browser at http://localhost:8080 (or whichever port is assigned).

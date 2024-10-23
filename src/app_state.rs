@@ -125,13 +125,18 @@ pub fn cleanup_pause_menu(mut commands: Commands, query: Query<Entity, With<Paus
     }
 }
 
+pub fn clear_world_system(mut commands: Commands, mut entities: Query<Entity, (Without<Camera>, Without<Window>)>,) {
+    // This removes all entities
+    for entity_id in entities.iter_mut() {
+        commands.entity(entity_id).despawn();
+    }
+}
+
 pub fn some_weird_fn() {
     println!("I'm the weird function!");
 }
 
-pub fn my_placeholder_fn() {
-
-}
+pub fn my_placeholder_fn() {}
 
 pub fn falsy_run_condition() -> bool {
     false

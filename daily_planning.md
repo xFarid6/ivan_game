@@ -16,19 +16,22 @@ Daily planner for the continuation of the project:
 - [x] Function to convert [from window to world coordinates](https://stackoverflow.com/questions/64714076/how-do-i-convert-screen-space-to-world-space-coords-in-bevy-using-camera2dcompon)
 - [-] ~~Control ball with keyboard arrow keys~~ (WASD + key to turn off gravity)
 - [ ] Test collisions with Triangles and Squares [(add collisions)](https://kishimotostudios.com/articles/aabb_collision/)
-- [ ] Check out Tiled level editor
+- [x] Check out Tiled level editor (found [a better alternative](https://www.spritefusion.com/editor))
 - [ ] Get started working on the player (his file, structs, functions, sprites, ...)
 - [x] On [using bundles](https://bevy-cheatbook.github.io/programming/bundle.html)
 - [ ] Test out some particle systems
-- [ ] Make a navigation for the app
+- [x] Make a navigation for the app (currently implemented as State-switching)
 - [ ] Get started on some UI elements (possibly reusables) 
 - [x] Learn how to [add bloom to shapes](https://bevyengine.org/examples/2d-rendering/bloom-2d/)
 - [ ] Make various types of particles 
-- [ ] Make a world for a game (I'd go pixel art, 2D, lateral movement) as a tilemap
+- [x] Make a world for a game (I'd go pixel art, 2D, lateral movement) as a tilemap
 - [ ] Import it with the bevy_ecs_tilemap plugin
-- [ ] Add a "Scene" stack
+- [x] Add a "Scene" stack
 - [ ] Add parallax scrolling
 - [ ] Setup camera for pixel perfect rendering
+- [??] Serve the game on the web?!
+- [ ] Make another world for the game
+- [ ] Add satisfying jigsaw particle effect (particles scatter on screen and follow mouse + explosion on click)
 
 ----
 

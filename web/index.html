@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Game</title>
+    <!-- <link rel="icon" type="image/png" href="/favicon-48x48.png" sizes="48x48" /> -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+</head>
+<body>
+    <script type="module">
+        import init from './pkg/ivan_game.js'; // adjust the path and file name
+        async function run() {
+            await init(); // Initialize the WebAssembly module
+            // Optionally call your game's entry point if you have one
+            // For example: YourGame.run_app();
+        }
+
+        run();
+    </script>
+</body>
+</html>
+
+<!-- npx http-server www -->

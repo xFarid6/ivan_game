@@ -52,7 +52,7 @@ pub struct Path {
 pub fn spawn_emitter_scene1(mut commands: Commands) {
     commands.spawn((
         ParticleEmitter {
-            spawn_rate: 20.0, // 10 particles per second
+            spawn_rate: 10.0, // 10 particles per second
             time_since_last_spawn: 0.0,
         },
         Transform::default(), // Position of the emitter
