@@ -32,6 +32,10 @@ Daily planner for the continuation of the project:
 - [??] Serve the game on the web?!
 - [ ] Make another world for the game
 - [ ] Add satisfying jigsaw particle effect (particles scatter on screen and follow mouse + explosion on click)
+- [ ] Adding buttons
+- [ ] Adding shaders
+- [ ] Tilemap loading and rendering system
+- [ ] Implement new Scene with Graph drawing simulation
 
 ----
 

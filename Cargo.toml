@@ -9,11 +9,19 @@ repository = "https://github.com/xFarid6/ivan_game"  # replace with your actual 
 license = "MIT"  # or your preferred license
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "ivan_game_bin"   # Change the binary name
+path = "src/main.rs"
 
 [dependencies]
 bevy = { version = "0.14.2", features = ["dynamic_linking"] }
 bevy-inspector-egui = "0.27.0"
+bevy_ecs_tilemap = "0.14.0"
+image = "0.25.4"
 rand = "0.8.5"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
 
 [workspace]
 resolver = "2" # Important! wgpu/Bevy needs this!
@@ -28,7 +36,8 @@ rustflags = ["--cfg", "web_sys_unstable_apis"]
 opt-level = 3
 
 [lib]
-path = "src/main.rs"
+name = "ivan_game"         # Your library target
+path = "src/lib.rs"        # Path to your library code
 crate-type = ["cdylib", "rlib"]
 
 [profile.release]

@@ -1,4 +1,7 @@
-#[allow(unused_variables)]
+#![allow(unused_variables)]
+#![allow(dead_code)]
+#![allow(unused_imports)]
+#![allow(unused_mut)]
 
 // Modules
 mod app_utils;
@@ -8,6 +11,7 @@ mod player;
 mod particles;
 mod cards;
 mod app_state;
+mod tilemaps;
 
 // Bevy
 use bevy::{
@@ -17,10 +21,12 @@ use bevy::{
     }, diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, render::mesh::Mesh, sprite::MaterialMesh2dBundle, utils::dbg, winit::WinitSettings
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_ecs_tilemap::prelude::*;
 
 // Std rust libraries
 use rand::Rng;
 use std::{collections::HashMap, fs, time::Duration};
+use std::env;
 
 // Other libraries
 
@@ -32,6 +38,7 @@ use player::*;
 use ui::*;
 use cards::*;
 use app_state::*;
+use tilemaps::*;
 
 // A unit struct to help identify the Ball component
 #[derive(Component)]
@@ -61,19 +68,26 @@ struct MyWeirdSet; // Sets are just a reference name, not an actual grouping
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 struct Scene1Set;
 
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+struct Scene2Set;
+
 fn main() {
+    // env::set_var("RUST_BACKTRACE", "1");
     App::new()
         // PLUGINS
         .add_plugins(
             (
-                DefaultPlugins.set(WindowPlugin {
-                    primary_window: Some(Window {
-                        title: "Something other than \"Bevy App\"".to_string(),
+                DefaultPlugins
+                    .set(WindowPlugin {
+                        primary_window: Some(Window {
+                            title: "Something other than \"Bevy App\"".to_string(),
+                            ..Default::default()
+                        }),
                         ..Default::default()
-                    }),
-                    ..Default::default()
-                }), 
-                FrameTimeDiagnosticsPlugin
+                    })
+                    .set(ImagePlugin::default_nearest()), 
+                FrameTimeDiagnosticsPlugin,
+                TilemapPlugin
             ))
         .add_plugins(WorldInspectorPlugin::new())
 
@@ -88,6 +102,7 @@ fn main() {
         .insert_resource(CardHandles { cards_map: HashMap::new() } )
         .insert_resource(SceneStack::new(AppState::Scene1))  // Start with Scene 1
         .insert_state(AppState::Scene1)
+
 
         // SYSTEM CONFIGURATIONS    
         .configure_sets
@@ -111,7 +126,8 @@ fn main() {
             FixedUpdate, 
             (
                 MyWeirdSet.run_if(in_state(AppState::Scene1)), // Configured to be able to run but not called
-                Scene1Set.run_if(in_state(AppState::Scene1))
+                Scene1Set.run_if(in_state(AppState::Scene1)),
+                Scene2Set.run_if(in_state(AppState::Scene2))
             )
         )
 
@@ -124,7 +140,7 @@ fn main() {
         .add_systems(OnExit(AppState::Scene1), cleanup_scene1)
 
         .add_systems(OnEnter(AppState::Scene2), (
-            my_placeholder_fn,
+            tilemaps_setup,
         ))
         .add_systems(OnExit(AppState::Scene2), cleanup_scene2)
 
@@ -157,7 +173,7 @@ fn main() {
         (
             FixedUpdate,
             (
-                close_on_esc, // one time event
+                close_on_esc,
                 (
                     (
                         window_walls,
@@ -167,8 +183,8 @@ fn main() {
                     ).chain(),
                     (add_ball_random_pos, remove_temp_balls),
                     change_gravity,
-                    (translate_everything_on_window_move, move_camera_on_mouse_wheel),
                     (draw_a_line_example, draw_xy_axis, draw_cursor),
+                    (translate_everything_on_window_move, move_camera_on_mouse_wheel),
                     (
                         emitter_system, particle_movement_system,
                         particle_lifetime_system, particle_fade_system, 
@@ -176,7 +192,8 @@ fn main() {
                         move_point, draw_path
                     ).chain(),
                     spawn_random_card,
-                ).in_set(Scene1Set)
+                ).in_set(Scene1Set),
+                (camera_movement_scene2).in_set(Scene2Set)
             ),
         )
 

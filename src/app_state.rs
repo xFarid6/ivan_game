@@ -79,7 +79,7 @@ pub fn handle_scene_switch(
         }
     }
 
-    if keyboard_input.just_pressed(KeyCode::KeyR) {
+    if keyboard_input.just_pressed(KeyCode::KeyN) {
         let current_state = scene_stack.current().expect("App should always be in some state");
         let go_to_state = AppState::get_next_state(current_state);
         println!("Going to: {:#?}", go_to_state);
