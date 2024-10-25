@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::get_mouse_position;
+use crate::{get_mouse_position, Scene1Entity};
 
 /*
 Key Components of a Particle System
@@ -67,6 +67,7 @@ pub fn spawn_emitter_scene1(mut commands: Commands) {
             phase: 0.0,          // Start phase
         },
         Path { points: Vec::new() },
+        Scene1Entity
     ));
 }
 
@@ -84,7 +85,7 @@ pub fn move_emitter_with_mouse(
     };
 }
 
-pub fn move_point(
+pub fn move_emitter_sin_wave(
     time: Res<Time>,
     mut query: Query<(&mut Transform, &mut MovingPoint, &mut Path)>,
 ) {
@@ -112,13 +113,13 @@ pub fn draw_path(
     return;
 }
 
-pub fn emitter_system(
+pub fn emitter_system_scene1(
     time: Res<Time>,
     mut commands: Commands,
     particle_material: Res<ParticleMaterialHandle>,
-    mut query: Query<(&mut ParticleEmitter, &Transform)>
+    mut query: Query<(&mut ParticleEmitter, &Transform, &Scene1Entity)>
 ) {
-    for (mut emitter, transform) in query.iter_mut() {
+    for (mut emitter, transform, _) in query.iter_mut() {
         emitter.time_since_last_spawn += time.delta_seconds();
 
         let particles_to_spawn = (emitter.time_since_last_spawn * emitter.spawn_rate).floor() as i32;
@@ -149,6 +150,7 @@ pub fn emitter_system(
                     },
                     ..Default::default()
                 },
+                Scene1Entity
             ));
         }
     }

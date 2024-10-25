@@ -1,6 +1,6 @@
 use bevy::{color::palettes::{css::*, tailwind::*}, core_pipeline::bloom::{BloomCompositeMode, BloomSettings}, diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, prelude::*};
 
-use crate::{Gravity, Health};
+use crate::{Gravity, Health, Scene1Entity};
 
 // ====== STRUCTS ======
 // A unit struct to help identify the FPS UI component, since there may be many Text components
@@ -50,6 +50,7 @@ pub fn ui_setup_scene1(
             ..default()
         }),
         FpsText,
+        Scene1Entity
     ));
 
     // Gravity Text
@@ -69,6 +70,7 @@ pub fn ui_setup_scene1(
             ..default()
         }),
         GravityText,
+        Scene1Entity
     ));
 
     // UI for bloom effect
@@ -80,6 +82,7 @@ pub fn ui_setup_scene1(
             ..default()
         }),
         BloomUIText,
+        Scene1Entity
     ));
 }
 
@@ -104,37 +107,6 @@ pub fn gravity_text_update_system(
     for mut text in &mut query {
         text.sections[0].value = format!("Gravity values: {:.2}, {:.2}", gravity.x, gravity.y);
     }
-}
-
-pub fn draw_a_line_example(mut gizmos: Gizmos) {
-    gizmos.line(Vec3::ZERO, Vec3::new(20., 20., 1.), Color::WHITE);
-}
-
-pub fn draw_xy_axis(mut gizmos: Gizmos) {
-    // X axis
-    gizmos.line(Vec3::new(-50000., 0., 1.), Vec3::new(50000., 0., 1.), Color::from(RED_400));
-
-    // Y axis
-    gizmos.line(Vec3::new(0., -50000., 1.), Vec3::new(0., 50000., 1.), Color::from(BLUE_900));
-}
-
-pub fn draw_cursor(
-    camera_query: Query<(&Camera, &GlobalTransform)>,
-    windows: Query<&Window>,
-    mut gizmos: Gizmos,
-) {
-    let (camera, camera_transform) = camera_query.single();
-
-    let Some(cursor_position) = windows.single().cursor_position() else {
-        return;
-    };
-
-    // Calculate a world position based on the cursor's position.
-    let Some(point) = camera.viewport_to_world_2d(camera_transform, cursor_position) else {
-        return;
-    };
-
-    gizmos.circle_2d(point, 10., Color::WHITE);
 }
 
 pub fn update_bloom_settings(
@@ -256,6 +228,39 @@ pub fn update_bloom_settings(
         }
     }
 }
+
+// Gizmos
+pub fn draw_a_line_example(mut gizmos: Gizmos) {
+    gizmos.line(Vec3::ZERO, Vec3::new(20., 20., 1.), Color::WHITE);
+}
+
+pub fn draw_xy_axis(mut gizmos: Gizmos) {
+    // X axis
+    gizmos.line(Vec3::new(-50000., 0., 1.), Vec3::new(50000., 0., 1.), Color::from(RED_400));
+
+    // Y axis
+    gizmos.line(Vec3::new(0., -50000., 1.), Vec3::new(0., 50000., 1.), Color::from(BLUE_900));
+}
+
+pub fn draw_cursor(
+    camera_query: Query<(&Camera, &GlobalTransform)>,
+    windows: Query<&Window>,
+    mut gizmos: Gizmos,
+) {
+    let (camera, camera_transform) = camera_query.single();
+
+    let Some(cursor_position) = windows.single().cursor_position() else {
+        return;
+    };
+
+    // Calculate a world position based on the cursor's position.
+    let Some(point) = camera.viewport_to_world_2d(camera_transform, cursor_position) else {
+        return;
+    };
+
+    gizmos.circle_2d(point, 10., Color::WHITE);
+}
+
 
 
 // Approach 1: makeup a healthbar from gizmos and redraw it every frame

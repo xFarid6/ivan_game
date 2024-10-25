@@ -18,7 +18,9 @@ use bevy::{
     color::palettes::css::PURPLE, core_pipeline::{
         bloom::{BloomCompositeMode, BloomSettings},
         tonemapping::Tonemapping,
-    }, diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, render::mesh::Mesh, sprite::MaterialMesh2dBundle, utils::dbg, winit::WinitSettings
+    }, 
+    diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, 
+    render::mesh::Mesh, sprite::MaterialMesh2dBundle, winit::WinitSettings
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_ecs_tilemap::prelude::*;
@@ -101,6 +103,7 @@ fn main() {
         // .insert_resource(WinitSettings::desktop_app())
         .insert_resource(CardHandles { cards_map: HashMap::new() } )
         .insert_resource(SceneStack::new(AppState::Scene1))  // Start with Scene 1
+        .insert_resource(Maps::new())
         .insert_state(AppState::Scene1)
 
 
@@ -135,14 +138,16 @@ fn main() {
         // ADD SYSTEMS
         // special schedules (generated on State existance)
         .add_systems(OnEnter(AppState::Scene1), (
-            my_placeholder_fn,
+            world_setup_scene1, spawn_emitter_scene1, ui_setup_scene1
         ))
         .add_systems(OnExit(AppState::Scene1), cleanup_scene1)
 
         .add_systems(OnEnter(AppState::Scene2), (
-            tilemaps_setup,
+            make_visible_map_scene2, // tilemaps_setup,
         ))
-        .add_systems(OnExit(AppState::Scene2), cleanup_scene2)
+        .add_systems(OnExit(AppState::Scene2), (
+            make_invis_map_scene2, cleanup_scene2
+        ))
 
         .add_systems(OnEnter(AppState::PauseMenu), (
             my_placeholder_fn,
@@ -154,8 +159,7 @@ fn main() {
         (
             Startup, 
             (
-                assets_setup, world_setup,
-                (world_setup_scene1, ui_setup_scene1, spawn_emitter_scene1).chain().in_set(Scene1Set),
+                assets_setup, world_setup, (tilemaps_setup, make_invis_map_scene2).chain(),
                 (some_weird_fn, some_weird_fn).in_set(MyWeirdSet)
             )
         )
@@ -186,10 +190,10 @@ fn main() {
                     (draw_a_line_example, draw_xy_axis, draw_cursor),
                     (translate_everything_on_window_move, move_camera_on_mouse_wheel),
                     (
-                        emitter_system, particle_movement_system,
+                        emitter_system_scene1, particle_movement_system,
                         particle_lifetime_system, particle_fade_system, 
                         particle_size_scaling_system, particle_gravity_system,
-                        move_point, draw_path
+                        move_emitter_sin_wave, draw_path
                     ).chain(),
                     spawn_random_card,
                 ).in_set(Scene1Set),
@@ -226,6 +230,7 @@ fn world_setup_scene1(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    asset_server: Res<AssetServer>
 ) {
     // Ball
     commands.spawn((
@@ -238,16 +243,22 @@ fn world_setup_scene1(
         },
         Ball,
         Velocity(INITIAL_BALL_DIRECTION.normalize() * BALL_SPEED),
+        Scene1Entity
     ));
 
     // Circle mesh
-    commands.spawn(MaterialMesh2dBundle {
-        mesh: meshes.add(Circle::new(100.)).into(),
-        // 4. Put something bright in a dark environment to see the effect
-        material: materials.add(Color::srgb(7.5, 0.0, 7.5)),
-        transform: Transform::from_translation(Vec3::new(-200., 0., 0.)),
-        ..default()
-    });
+    commands.spawn(
+        (
+            MaterialMesh2dBundle {
+                mesh: meshes.add(Circle::new(100.)).into(),
+                // 4. Put something bright in a dark environment to see the effect
+                material: materials.add(Color::srgb(7.5, 0.0, 7.5)),
+                transform: Transform::from_translation(Vec3::new(-200., 0., 0.)),
+                ..default()
+            }, 
+            Scene1Entity
+        )
+    );
 
     // Triangle
     commands.spawn((
@@ -277,34 +288,56 @@ fn world_setup_scene1(
         },
         Triangle,
         Collidable,
+        Scene1Entity
     ));
 
     // Hexagon mesh
-    commands.spawn(MaterialMesh2dBundle {
-        mesh: meshes.add(RegularPolygon::new(100., 6)).into(),
-        // 4. Put something bright in a dark environment to see the effect
-        material: materials.add(Color::srgb(6.25, 9.4, 9.1)),
-        transform: Transform::from_translation(Vec3::new(200., 0., 0.)),
-        ..default()
-    });
+    commands.spawn(
+        (
+            MaterialMesh2dBundle {
+                mesh: meshes.add(RegularPolygon::new(100., 6)).into(),
+                // 4. Put something bright in a dark environment to see the effect
+                material: materials.add(Color::srgb(6.25, 9.4, 9.1)),
+                transform: Transform::from_translation(Vec3::new(200., 0., 0.)),
+                ..default()
+            }, 
+            Scene1Entity
+        )
+    );
 
     // Octagon mesh
-    commands.spawn(MaterialMesh2dBundle {
-        mesh: meshes.add(RegularPolygon::new(100., 8)).into(),
-        // 4. Put something bright in a dark environment to see the effect
-        material: materials.add(Color::from(PURPLE)),
-        transform: Transform::from_translation(Vec3::new(400., 0., 0.)),
-        ..default()
-    });
+    commands.spawn((
+        MaterialMesh2dBundle {
+            mesh: meshes.add(RegularPolygon::new(100., 8)).into(),
+            // 4. Put something bright in a dark environment to see the effect
+            material: materials.add(Color::from(PURPLE)),
+            transform: Transform::from_translation(Vec3::new(400., 0., 0.)),
+            ..default()
+        }, 
+        Scene1Entity
+    ));
 
     // Square mesh
-    commands.spawn(MaterialMesh2dBundle {
-        mesh: meshes.add(RegularPolygon::new(100., 4)).into(),
-        // 4. Put something bright in a dark environment to see the effect
-        material: materials.add(Color::srgb(7.26, 6.84, 5.54)),
-        transform: Transform::from_translation(Vec3::new(-450., 0., 0.)),
-        ..default()
-    });    
+    commands.spawn((
+        MaterialMesh2dBundle {
+            mesh: meshes.add(RegularPolygon::new(100., 4)).into(),
+            // 4. Put something bright in a dark environment to see the effect
+            material: materials.add(Color::srgb(7.26, 6.84, 5.54)),
+            transform: Transform::from_translation(Vec3::new(-450., 0., 0.)),
+            ..default()
+        }, Scene1Entity
+    ));    
+
+    // Bevy icon
+    let icon_handle: Handle<Image> = asset_server.load("icon.png");
+    let icon_handle = asset_server.get_handle("icon.png").expect("Icon hasn't been loaded!");
+    commands.spawn((
+        SpriteBundle {
+            texture: icon_handle,
+            transform: Transform::from_xyz(100., -100., 2.),
+            ..default()
+        }, Scene1Entity
+    ));
 }
 
 fn assets_setup(
@@ -314,15 +347,6 @@ fn assets_setup(
 ) {
     let icon_handle: Handle<Image> = asset_server.load("icon.png");
     let stars_handle: Handle<Image> = asset_server.load("particles/star.png");
-
-
-    commands.spawn((
-        SpriteBundle {
-            texture: icon_handle.clone(),
-            transform: Transform::from_xyz(100., -100., 2.),
-            ..default()
-        },
-    ));
 
     load_cards_pngs(asset_server, card_handles);
 
@@ -399,24 +423,6 @@ fn reposition_ball_on_mouse_click(
     window: Query<&Window>,
     mut ball_transform: Query<&mut Transform, With<Ball>>,
 ) {
-    // if mouse_button_input.just_pressed(MouseButton::Left) {
-    //     let Some(cursor_position) = window.single().cursor_position() else {
-    //         return;
-    //     };
-
-    //     let (window_width, window_height) = getwindowsize(window);
-
-    //     let mut b_transform = ball_transform.single_mut();
-
-    //     b_transform.translation.x = cursor_position.x - (window_width / 2.);
-
-    //     if cursor_position.y <= (window_height / 2.) {
-    //         b_transform.translation.y = (window_height / 2.) - cursor_position.y;
-    //     } else {
-    //         b_transform.translation.y = -(cursor_position.y - (window_height / 2.));
-    //     }
-    // }
-
     if ! mouse_button_input.just_pressed(MouseButton::Left) {
         return;
     }

@@ -1,6 +1,8 @@
 // use bevy::reflect::Reflect;
 use bevy::prelude::*;
 
+use crate::Maps;
+
 
 
 // ====== STRUCTS ======
@@ -107,15 +109,56 @@ Clean up logic:
 - Overlaying content -> potential issues
 */
 
-pub fn cleanup_scene1(mut commands: Commands, query: Query<Entity, With<Scene1Entity>>) {
+pub fn cleanup_scene1(
+    mut commands: Commands, 
+    query: Query<Entity, With<Scene1Entity>>
+) {
+    println!("Removing {:?} entities...", query.iter().len());
     for entity in query.iter() {
         commands.entity(entity).despawn();
     }
+    println!("Cleaned scene 1!");
 }
 
-pub fn cleanup_scene2(mut commands: Commands, query: Query<Entity, With<Scene2Entity>>) {
+pub fn cleanup_scene2(
+    mut commands: Commands, 
+    query: Query<Entity, With<Scene2Entity>>) {
+    println!("Removing {:?} entities...", query.iter().len());
     for entity in query.iter() {
         commands.entity(entity).despawn();
+    }
+    println!("Cleaned scene 2!");
+}
+
+pub fn make_invis_map_scene2(
+    mut commands: Commands,
+    mut maps: ResMut<Maps>,
+    mut query: Query<&mut Visibility>,
+) {
+    let scene2_map_name = "Tiny_Swords".to_string(); 
+    let scene2_map_layers = maps.get_map_layers(scene2_map_name);
+    let layer_entities = scene2_map_layers.get_layers_ids();
+    
+    for entity in layer_entities.iter() {
+        if let Ok(mut visibility) = query.get_mut(*entity) {
+            *visibility = Visibility::Hidden; // Modify the visibility component
+        }
+    }
+}
+
+pub fn make_visible_map_scene2(
+    mut commands: Commands,
+    mut maps: ResMut<Maps>,
+    mut query: Query<&mut Visibility>,
+) {
+    let scene2_map_name = "Tiny_Swords".to_string(); 
+    let scene2_map_layers = maps.get_map_layers(scene2_map_name);
+    let layer_entities = scene2_map_layers.get_layers_ids();
+    
+    for entity in layer_entities.iter() {
+        if let Ok(mut visibility) = query.get_mut(*entity) {
+            *visibility = Visibility::Visible; // Modify the visibility component
+        }
     }
 }
 
@@ -132,6 +175,7 @@ pub fn clear_world_system(mut commands: Commands, mut entities: Query<Entity, (W
     }
 }
 
+// These are for testing purposes
 pub fn some_weird_fn() {
     println!("I'm the weird function!");
 }

@@ -3,6 +3,8 @@ use std::{collections::HashMap, fs};
 use bevy::prelude::*;
 use rand::{seq::SliceRandom, thread_rng, Rng};
 
+use crate::Scene1Entity;
+
 #[macro_export]
 macro_rules! enum_str {
     // Only matches enums which variants have no values
@@ -170,30 +172,7 @@ pub fn load_cards_pngs(
         // dbg!(map_key);
 
         handles_map.cards_map.insert(map_key.to_owned(), handle);
-
-        /* This appears to be not needed
-        // now we have, for example: "7_of_clubs"
-        // and we want: "seven_of_clubs"
-        let number = map_key.split("_").into_iter().next().unwrap();
-        match number.parse::<u8>() {
-            Ok(n) => {
-                // Remove the number in front
-                let map_key = map_key.replace(number, "");
-                
-                // convert n to a string
-                let string_n = int_to_string(n);
-                let map_key = string_n + &map_key.to_string();
-                // println!("{:?}", map_key);
-
-                // Finally add it to the map
-                handles_map.cards_map.insert(map_key.to_string(), handle);
-            },
-            Err(_) => { handles_map.cards_map.insert(map_key.to_owned(), handle); },
-        }
-        */
-
     }
-    // dbg!(&handles_map.cards_map);
 }
 
 /// Converts a single digit to it's literal name
@@ -225,26 +204,32 @@ pub fn spawn_card(
     dbg!(card_suit);
     dbg!(&card_name);
 
-    commands.spawn(CardBundle {
-        suit: Suit::from_string(card_suit),
-        front: SpriteBundle {
-            texture: card_handles.cards_map.get(&card_name).expect("No handles found for this key").clone(),
+    commands.spawn((
+        CardBundle {
+            suit: Suit::from_string(card_suit),
+            front: SpriteBundle {
+                texture: card_handles.cards_map.get(&card_name).expect("No handles found for this key").clone(),
+                transform: Transform {
+                    translation: Vec3 { x: 0., y: 400., z: 1. },
+                    ..Default::default()
+                },
+                ..default()
+            },
+        },
+        Scene1Entity
+    ));
+
+    commands.spawn((
+        SpriteBundle {
+            texture: card_handles.cards_map.get("back").expect("No handles found for this key").clone(),
             transform: Transform {
-                translation: Vec3 { x: 0., y: 400., z: 1. },
+                translation: Vec3 { x: 0., y: 400., z: 0. },
                 ..Default::default()
             },
             ..default()
         },
-    });
-
-    commands.spawn(SpriteBundle {
-        texture: card_handles.cards_map.get("back").expect("No handles found for this key").clone(),
-        transform: Transform {
-            translation: Vec3 { x: 0., y: 400., z: 0. },
-            ..Default::default()
-        },
-        ..default()
-    });
+        Scene1Entity
+    ));
 }
 
 pub fn spawn_random_card(

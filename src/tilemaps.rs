@@ -5,6 +5,9 @@ use serde_json::from_str;
 use std::{collections::HashSet, fs};
 use image::image_dimensions;
 
+
+// ====== STRUCTS ======
+
 #[derive(Deserialize, Debug)]
 pub struct TilemapData {
     tile_size: u32,
@@ -27,22 +30,97 @@ pub struct Tile {
     y: u32,
 }
 
+#[derive(Debug, Component)]
+struct NamedLayer(String);
+
+// These next two structs actually hold a lot of duplicated data. Could be better. 
 #[derive(Debug, Resource)]
-struct LayerNames {
-    names: Vec<String>,
-    layer_numbers: HashMap<String, u32>
+pub struct Maps {
+    pub map_names: Vec<String>,
+    pub maps: HashMap<String, MapLayersData>
 }
 
-/* 
-#[derive(Deserialize, Debug)]
-pub struct Tileset {
-    firstgid: u32,
-    image: String,  // Path to the spritesheet image
-    tilewidth: u32,
-    tileheight: u32,
-    columns: u32,
+#[derive(Debug)]
+pub struct MapLayersData {
+    layer_numbers: HashMap<String, u32>,
+    layer_data: HashMap<String, (Entity, TileStorage)>,
 }
-*/
+
+
+impl Maps {
+    pub fn new() -> Self {
+        Maps {
+            map_names: Vec::new(),
+            maps: HashMap::new()
+        }
+    }
+
+    fn add_map_name(&mut self, name: String) {
+        self.map_names.push(name);
+    }
+
+    fn add_new_map(&mut self, map_name: String, map_layers_data: MapLayersData) {
+        self.add_map_name(map_name.clone());
+
+        match self.maps.insert(map_name, map_layers_data) {
+            Some(old_value) => {
+                println!("Map was already registered! It has now been UPDATED.")
+            },
+            None => {
+                println!("New map data has been inserted correctly");
+            },
+        }
+    }
+
+    pub fn get_map_layers(&self, map_name: String) -> &MapLayersData {
+        self.maps.get(&map_name).expect("Map name didn't match any KEYS")
+    }
+}
+
+
+impl MapLayersData {
+    pub fn new() -> Self {
+        Self {
+            layer_numbers: HashMap::new(),
+            layer_data: HashMap::new()
+        }
+    }
+
+    pub fn add_layer(&mut self, layer_name: String, layer_index: u32) {
+        match self.layer_numbers.insert(layer_name.clone(), layer_index) {
+            Some(old_layer) => {
+                println!("Layer was already in the map! It has been UPDATED.");
+                println!("Old layer was: {:?}", old_layer);
+                println!("New layer is: {:?}", (layer_name, layer_index));
+            },
+            None => {
+                println!("Correclty inserted layer: {:?} with index {:?}", layer_name, layer_index);
+            },
+        }
+    }
+
+    pub fn add_data(&mut self, layer_name: String, tilemap_components: (Entity, TileStorage)) {
+        match self.layer_data.insert(layer_name, tilemap_components) {
+            Some(old_data) => {
+                println!("A layer with the same name was already in the map, and now it has been UPDATED");
+            },
+            None => {
+                println!("New map data for this layer inserted correctly");
+            },
+        }
+    }
+
+    pub fn get_layers_ids(&self) -> Vec<Entity> {
+        let mut res = Vec::new();
+        for (id, _) in self.layer_data.values() {
+            res.push(*id);
+        }
+        res
+    }
+}
+
+
+// ====== METHODS ======
 
 #[deprecated(since="24/10's commit", note="this never actually worked")]
 fn tilemaps_setup_no(
@@ -237,15 +315,18 @@ pub fn tilemaps_setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
+    mut all_maps: ResMut<Maps>
 ) {
-    let spritesheet_path = "maps/Tiny_Swords/spritesheet.png";
-    let tilemap_json = fs::read_to_string("assets/maps/Tiny_Swords/map.json")
+    let map_name = "Tiny_Swords".to_string();
+
+    let spritesheet_path = "maps/".to_string() + &map_name + "/spritesheet.png";
+    let tilemap_json = fs::read_to_string("assets/maps/".to_string() + &map_name + "/map.json")
         .expect("Could not load tilemap file");
     let tilemap_data: TilemapData = from_str(&tilemap_json)
         .expect("Could not parse tilemap JSON");    
     let texture_handle: Handle<Image> = asset_server
-        .load(spritesheet_path);
-    let (img_x, img_y) = image_dimensions("assets/".to_owned() + spritesheet_path)
+        .load(spritesheet_path.clone());
+    let (img_x, img_y) = image_dimensions("assets/".to_owned() + &spritesheet_path)
         .expect("Image dimensions were not readable");
 
 
@@ -271,7 +352,8 @@ pub fn tilemaps_setup(
 
     
     let mut occupied_positions_per_layer = vec![HashSet::new(); tilemap_data.layers.len()];
-    
+    let mut map_layers_data = MapLayersData::new();
+
     // Spawn the elements of the tilemap.
     // Alternatively, you can use helpers::filling::fill_tilemap.
     for (layer_index, layer) in tilemap_data.layers.iter().rev().enumerate() {
@@ -279,6 +361,7 @@ pub fn tilemaps_setup(
                 
         let tilemap_entity = commands.spawn_empty().id();
         let mut tile_storage = TileStorage::empty(map_size);
+        let layer_name = layer.name.clone();
 
         for tile in layer.tiles.iter() {
             let tile_id: u32 = tile.id.parse()
@@ -302,7 +385,7 @@ pub fn tilemaps_setup(
             let tile_entity = commands.spawn(
                 TileBundle {
                     position: tile_pos,
-                    texture_index: texture_index,
+                    texture_index,
                     tilemap_id: TilemapId(tilemap_entity),
                     ..Default::default()
                 })
@@ -314,25 +397,38 @@ pub fn tilemaps_setup(
         let z_index = layer_index as f32;
         let centered_transform = get_tilemap_center_transform(&map_size, &grid_size, &map_type, 0.0);
 
-        commands.entity(tilemap_entity).insert(TilemapBundle {
-            grid_size,
-            map_type,
-            size: map_size,
-            storage: tile_storage,
-            texture: TilemapTexture::Single(texture_handle.clone()),
-            tile_size,
-            transform: Transform { 
-                translation: Vec3 { 
-                    x: centered_transform.translation.x, 
-                    y: centered_transform.translation.x, 
-                    z: z_index // All this just to change the z index and order the layers
-                }, 
-                ..centered_transform
-            },
-            ..Default::default()
-        });
+        commands.entity(tilemap_entity).insert(
+            (
+                TilemapBundle 
+                {
+                    grid_size,
+                    map_type,
+                    size: map_size,
+                    storage: tile_storage.clone(),
+                    texture: TilemapTexture::Single(texture_handle.clone()),
+                    tile_size,
+                    transform: Transform { 
+                        translation: Vec3 { 
+                            x: centered_transform.translation.x, 
+                            y: centered_transform.translation.x, 
+                            z: z_index // All this just to change the z index and order the layers
+                        }, 
+                        ..centered_transform
+                    },
+                    ..Default::default()
+                },
+                NamedLayer(layer_name.clone())
+            )
+        );
 
+        // Keep track of the "small" maps (single layer of a map)
+        
+        map_layers_data.add_layer(layer_name.clone(), layer_index as u32);
+        map_layers_data.add_data(layer_name, (tilemap_entity, tile_storage));
     }
+
+    // Keep track of the full maps
+    all_maps.add_new_map(map_name, map_layers_data);
 
     println!("Doing it all");
 }
