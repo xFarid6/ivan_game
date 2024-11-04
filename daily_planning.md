@@ -25,19 +25,23 @@ Daily planner for the continuation of the project:
 - [x] Learn how to [add bloom to shapes](https://bevyengine.org/examples/2d-rendering/bloom-2d/)
 - [ ] Make various types of particles 
 - [x] Make a world for a game (I'd go pixel art, 2D, lateral movement) as a tilemap
-- [ ] Import it with the bevy_ecs_tilemap plugin
+- [x] Import it with the bevy_ecs_tilemap plugin
 - [x] Add a "Scene" stack
 - [ ] Add parallax scrolling
-- [ ] Setup camera for pixel perfect rendering
+- [x] Setup camera for pixel perfect rendering
 - [x] Serve the game on the web?! (lib.rs file)
 - [ ] Make another world for the game
 - [ ] Add satisfying jigsaw particle effect (particles scatter on screen and follow mouse + explosion on click)
-- [ ] Adding buttons
+- [x] Adding buttons
 - [ ] Adding shaders
-- [ ] Tilemap loading and rendering system
+- [x] Tilemap loading and rendering system
 - [ ] Implement new Scene with Graph drawing simulation
 - [ ] Add animated character
-- [ ] Implement cleanup functions for each level
+- [x] Implement cleanup functions for each level
+- [x] Add personal ID storage for tilemaps
+- [x] .set(ImagePlugin::default_nearest()) DONE
+- [ ] Add circle-filling timer
+- [ ] Develop button adding api
 
 ----
 

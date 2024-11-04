@@ -12,6 +12,7 @@ use crate::Maps;
 pub enum AppState {
     Scene1,
     Scene2,
+    Scene3,
     PauseMenu,
 }
 
@@ -19,7 +20,8 @@ impl AppState {
     fn get_next_state(&self) -> Self {
         match self {
             AppState::Scene1 => AppState::Scene2,
-            AppState::Scene2 => AppState::Scene1,
+            AppState::Scene2 => AppState::Scene3,
+            AppState::Scene3 => AppState::Scene1,
             AppState::PauseMenu => AppState::Scene1,
         }
     }
@@ -53,9 +55,10 @@ pub struct Scene1Entity;
 pub struct Scene2Entity;
 
 #[derive(Debug, Component)]
+pub struct Scene3Entity;
+
+#[derive(Debug, Component)]
 pub struct PauseMenuEntity;
-
-
 
 
 // ====== METHODS ======
@@ -90,15 +93,18 @@ pub fn handle_scene_switch(
     }
 
     // Pop the current scene off the stack and return to the previous scene when 'R' is pressed
-    // if keyboard_input.just_pressed(KeyCode::KeyR) {
-    //     if scene_stack.pop().is_some() {
-    //         if let Some(previous_scene) = scene_stack.current() {
-    //             // state.set(Box::new(previous_scene.clone())).unwrap() // Where state is: mut state: ResMut<State<AppState>>
-    //             next_state.set(previous_scene.clone());  // Switch back to the previous scene
-    //             println!("Returned to {:?}", previous_scene);
-    //         }
-    //     }
-    // }
+    if keyboard_input.just_pressed(KeyCode::KeyR) {
+        if scene_stack.pop().is_some() {
+            if let Some(previous_scene) = scene_stack.current() {
+                // state.set(Box::new(previous_scene.clone())).unwrap() // Where state is: mut state: ResMut<State<AppState>>
+                println!("Returned to {:?}", previous_scene);
+                next_state.set(*previous_scene);  // Switch back to the previous scene
+            } else {
+                scene_stack.push(AppState::Scene1);
+                next_state.set(AppState::Scene1);
+            }
+        } 
+    }
 }
 
 
@@ -160,6 +166,17 @@ pub fn make_visible_map_scene2(
             *visibility = Visibility::Visible; // Modify the visibility component
         }
     }
+}
+
+pub fn cleanup_scene3(
+    mut commands: Commands, 
+    query: Query<Entity, With<Scene3Entity>>
+) {
+    println!("Removing {:?} entities...", query.iter().len());
+    for entity in query.iter() {
+        commands.entity(entity).despawn();
+    }
+    println!("Cleaned scene 3!");
 }
 
 pub fn cleanup_pause_menu(mut commands: Commands, query: Query<Entity, With<PauseMenuEntity>>) {

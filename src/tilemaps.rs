@@ -410,7 +410,7 @@ pub fn tilemaps_setup(
                     transform: Transform { 
                         translation: Vec3 { 
                             x: centered_transform.translation.x, 
-                            y: centered_transform.translation.x, 
+                            y: centered_transform.translation.y, 
                             z: z_index // All this just to change the z index and order the layers
                         }, 
                         ..centered_transform
