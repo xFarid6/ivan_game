@@ -15,6 +15,10 @@ mod tilemaps;
 mod buttons;
 mod pendulum;
 
+pub mod server;
+pub mod client;
+mod networking;
+
 // Bevy
 use bevy::{
     color::palettes::css::PURPLE, core_pipeline::{
@@ -45,6 +49,9 @@ use app_state::*;
 use tilemaps::*;
 use buttons::*;
 use pendulum::*;
+
+use client::*;
+use networking::*;
 
 // A unit struct to help identify the Ball component
 #[derive(Component)]

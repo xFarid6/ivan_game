@@ -42,6 +42,9 @@ Daily planner for the continuation of the project:
 - [x] .set(ImagePlugin::default_nearest()) DONE
 - [ ] Add circle-filling timer
 - [ ] Develop button adding api
+- [ ] Fix github Actions
+- [ ] Add client
+- [ ] Add server
 
 ----
 
