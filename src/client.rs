@@ -7,17 +7,18 @@ use std::io::{self, Write, Read};
 use std::thread;
 use std::sync::{Arc, Mutex};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum ClientState {
     Connected,
     Disconnected,
     Connecting,
 }
 
+#[derive(Debug)]
 pub struct Client {
-    stream: Option<TcpStream>, // Make it optional to handle disconnected state
-    state: ClientState,
-    last_message: String,
+    pub stream: Option<TcpStream>, // Make it optional to handle disconnected state
+    pub state: ClientState,
+    pub last_message: String,
 }
 
 impl Client {
@@ -50,8 +51,12 @@ impl Client {
     pub fn connect_with_tls(address: &str) -> io::Result<TlsStream<TcpStream>> {
         let connector = TlsConnector::new().unwrap();
         let stream = TcpStream::connect(address)?;
-        let tls_stream = connector.connect("server_name", stream)?;
+        let tls_stream = connector.connect("server_name", stream).expect("TLS connection failed");
         Ok(tls_stream)
+    }
+
+    pub fn is_connected(&self) -> bool {
+        self.state == ClientState::Connected
     }
 
     // Disconnect from the server
@@ -62,6 +67,10 @@ impl Client {
         }
         self.state = ClientState::Disconnected;
         println!("Disconnected from the server");
+    }
+
+    pub fn reconnect(&mut self) -> io::Result<String> {
+        Err(io::Error::new(io::ErrorKind::Unsupported, "Unable to reconnect. Function not implemented."))
     }
 
     // Send a message to the server

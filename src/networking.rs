@@ -1,6 +1,11 @@
 use bevy::prelude::*;
 use bevy::prelude::Timer;
 use serde::{Serialize, Deserialize};
+use std::net::TcpStream;
+use std::io::{self, Write, Read};
+
+use crate::client::*;
+
 
 #[derive(Serialize, Deserialize)]
 struct Message {
@@ -25,6 +30,7 @@ fn receive_json_message(stream: &mut TcpStream) -> io::Result<Message> {
 
 
 // This resource has not been initialized yet
+#[derive(Debug, Resource)]
 pub struct ClientResource {
     pub client: Client,
     pub connection_timer: Timer, // Timer for connection attempts
