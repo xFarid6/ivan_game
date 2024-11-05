@@ -43,8 +43,10 @@ Daily planner for the continuation of the project:
 - [ ] Add circle-filling timer
 - [ ] Develop button adding api
 - [ ] Fix github Actions
-- [ ] Add client
-- [ ] Add server
+- [x] Add client
+- [x] Add server
+- [ ] Integrate client with the game
+- [ ] Integrate server with the game
 
 ----
 

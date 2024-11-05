@@ -1,5 +1,5 @@
 // use bevy::reflect::Reflect;
-use bevy::prelude::*;
+use bevy::{prelude::*, reflect::Enum};
 
 use crate::Maps;
 
@@ -13,6 +13,7 @@ pub enum AppState {
     Scene1,
     Scene2,
     Scene3,
+    Scene4,
     PauseMenu,
 }
 
@@ -21,7 +22,8 @@ impl AppState {
         match self {
             AppState::Scene1 => AppState::Scene2,
             AppState::Scene2 => AppState::Scene3,
-            AppState::Scene3 => AppState::Scene1,
+            AppState::Scene3 => AppState::Scene4,
+            AppState::Scene4 => AppState::Scene1,
             AppState::PauseMenu => AppState::Scene1,
         }
     }
@@ -56,6 +58,9 @@ pub struct Scene2Entity;
 
 #[derive(Debug, Component)]
 pub struct Scene3Entity;
+
+#[derive(Debug, Component)]
+pub struct Scene4Entity;
 
 #[derive(Debug, Component)]
 pub struct PauseMenuEntity;
@@ -177,6 +182,17 @@ pub fn cleanup_scene3(
         commands.entity(entity).despawn();
     }
     println!("Cleaned scene 3!");
+}
+
+pub fn cleanup_scene4(
+    mut commands: Commands, 
+    query: Query<Entity, With<Scene4Entity>>
+) {
+    println!("Removing {:?} entities...", query.iter().len());
+    for entity in query.iter() {
+        commands.entity(entity).despawn();
+    }
+    println!("Cleaned scene 4!");
 }
 
 pub fn cleanup_pause_menu(mut commands: Commands, query: Query<Entity, With<PauseMenuEntity>>) {
