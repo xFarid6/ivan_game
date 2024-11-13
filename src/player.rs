@@ -14,6 +14,8 @@ What should the player (Entity) be composed (Components) of?
 - Collision box (probably)
 */
 
+pub const SLIME_COLORS: [&str; 5] = ["Blue", "Green", "Red", "White", "Yellow"];
+
 // ====== STRUCTS ======
 
 #[derive(Bundle)]
@@ -44,7 +46,7 @@ pub struct PlayerName(String);
 pub struct Player;
 
 #[derive(Component)]
-struct AnimationConfig {
+pub struct AnimationConfig {
     first_sprite_index: usize,
     last_sprite_index: usize,
     fps: u8,
@@ -79,7 +81,7 @@ impl PlayerXp {
 }
 
 impl AnimationConfig {
-    fn new(first: usize, action: &str, fps: u8) -> Self {
+    pub fn new(first: usize, action: &str, fps: u8) -> Self {
         let mut durations: HashMap<&str, u32> = HashMap::from([
             ("Attack", 3),
             ("Born", 6),
@@ -93,13 +95,13 @@ impl AnimationConfig {
 
         Self {
             first_sprite_index: 1,
-            last_sprite_index: *durations.get(&action).expect("Action not found") as usize,
+            last_sprite_index: *durations.get(&action).expect("Action not found") as usize - 1,
             fps,
             frame_timer: Self::timer_from_fps(fps),
         }
     }
 
-    fn timer_from_fps(fps: u8) -> Timer {
+    pub fn timer_from_fps(fps: u8) -> Timer {
         Timer::new(Duration::from_secs_f32(1.0 / (fps as f32)), TimerMode::Once)
     }
 }
@@ -144,7 +146,6 @@ pub fn load_slimes(
             // dbg!(action);
 
             // Get the appropriate values and store them in the Texture Atlas as a Layout
-            // e.g. the sprite sheet has 7 sprites arranged in a row, and they are all 24px x 24px
             let layout = TextureAtlasLayout::from_grid
             (
                 UVec2::splat(slime_pixel_dimensions), 
@@ -157,35 +158,59 @@ pub fn load_slimes(
     }
 }
 
-// fn spawn_slime(
-//     commands: Commands,
-//     asset_server: Res<AssetServer>,
-//     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+pub fn spawn_slime(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    slime_color: String,
+    slime_action: &str,
+    position: Vec3
+) {
+    // Load a slime
+    let slime_assets_path = 
+        "characters/16PixelSlime/".to_owned() + &slime_color + "Slime/" + &slime_color + "Slime" + &slime_action + "-Sheet.png";
+    let slime_assets_path: String = slime_assets_path.to_owned();
+    let img_handle = asset_server.load(slime_assets_path);
 
-// ) {
-//     // Now spawn a first slime
-//     // the first sprite runs at 10 FPS
-//     let animation_config_1 = AnimationConfig::new(1, "Walking", 10);
+    // Configure the animation
+    let mut durations: HashMap<&str, u32> = HashMap::from([
+        ("Attack", 3),
+        ("Born", 6),
+        ("Die", 10),
+        ("Hurt", 3),
+        ("Idle", 3),
+        ("Idle2", 3),
+        ("Jump", 7),
+        ("Walking", 4),
+    ]);
+    let frame_count = durations.get(&slime_action).expect("Action not in hashmap");
+    let animation_config = AnimationConfig::new(1, &slime_action, 2);
+    
+    // Get the texture atlas layout for it
+    let slime_pixel_dimensions = 16;
+    let layout = TextureAtlasLayout::from_grid
+            (
+                UVec2::splat(slime_pixel_dimensions), 
+                4,
+                1, 
+                None, None
+            );
+    let texture_atlas_layout = texture_atlas_layouts.add(layout);
 
-//     // create the first (left-hand) sprite
-//     let texture = asset_server.get_handle(
-//         "/assets/characters/16PixelSlime/GreenSlime/GreenSlimeWalking-Sheet.png"
-//     ).expect("Handle not found");
-//     let texture_atlas_layout = texture_atlas_layouts.get(5).expect("Not found");
-//     commands.spawn((
-//         SpriteBundle {
-//             transform: Transform::from_scale(Vec3::splat(6.0))
-//                 .with_translation(Vec3::new(-50.0, 0.0, 0.0)),
-//             texture: texture.clone(),
-//             ..default()
-//         },
-//         TextureAtlas {
-//             layout: texture_atlas_layout.clone(),
-//             index: animation_config_1.first_sprite_index,
-//         },
-//         animation_config_1,
-//     ));
-// }
+    commands.spawn((
+        SpriteBundle {
+            transform: Transform::from_scale(Vec3::splat(6.0))
+                .with_translation(position),
+            texture: img_handle,
+            ..default()
+        },
+        TextureAtlas {
+            layout: texture_atlas_layout,
+            index: animation_config.first_sprite_index,
+        },
+        animation_config,
+    ));
+}
 
 fn get_slime_action(file_name: String) -> String {
     // &file_name = "YellowSlimeWalking-Sheet.png" or &file_name = "YellowSlimeIdle2-Sheet.png"
@@ -197,7 +222,7 @@ fn get_slime_action(file_name: String) -> String {
 
 // This system loops through all the sprites in the `TextureAtlas`, from  `first_sprite_index` to
 // `last_sprite_index` (both defined in `AnimationConfig`).
-fn execute_animations(
+pub fn execute_animations(
     time: Res<Time>,
     mut query: Query<(&mut AnimationConfig, &mut TextureAtlas)>,
 ) {
@@ -210,6 +235,8 @@ fn execute_animations(
             if atlas.index == config.last_sprite_index {
                 // ...and it IS the last frame, then we move back to the first frame and stop.
                 atlas.index = config.first_sprite_index;
+                // ...and reset the frame timer to start counting all over again
+                config.frame_timer = AnimationConfig::timer_from_fps(config.fps);
             } else {
                 // ...and it is NOT the last frame, then we move to the next frame...
                 atlas.index += 1;
@@ -218,4 +245,23 @@ fn execute_animations(
             }
         }
     }
+}
+
+pub fn spawn_slimes_system(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    key_pressed: Res<ButtonInput<KeyCode>>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    if key_pressed.just_pressed(KeyCode::KeyS) {
+        let position = Vec3::new(0., -100., 1.);
+        spawn_slime(commands, asset_server, texture_atlas_layouts, "Red".to_owned(), "Walking", position);
+        println!("Slime spawned at position: {:?}", position);
+    }
+}
+
+pub fn update_slime_position(
+
+) {
+    // TODO: Add Pac-Man like movement to slimes
 }

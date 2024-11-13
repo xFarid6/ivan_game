@@ -107,9 +107,9 @@ pub fn run_game() {
         })
         // .insert_resource(WinitSettings::desktop_app())
         .insert_resource(CardHandles { cards_map: HashMap::new() } )
-        .insert_resource(SceneStack::new(AppState::Scene1))  // Start with Scene 1
+        .insert_resource(SceneStack::new(AppState::Scene4))  // TODO: Start with Scene 1
         .insert_resource(Maps::new())
-        .insert_state(AppState::Scene1)
+        .insert_state(AppState::Scene4) // TODO: Match above state
 
 
         // SYSTEM CONFIGURATIONS    
@@ -127,7 +127,8 @@ pub fn run_game() {
             (
                 MyWeirdSet.run_if(in_state(AppState::Scene1)), // Configured to be able to run but not called
                 Scene1Set.run_if(in_state(AppState::Scene1)),
-                Scene3Set.run_if(in_state(AppState::Scene3))
+                Scene3Set.run_if(in_state(AppState::Scene3)),
+                Scene4Set.run_if(in_state(AppState::Scene4)),
             )
         )
         .configure_sets
@@ -136,7 +137,8 @@ pub fn run_game() {
             (
                 MyWeirdSet.run_if(in_state(AppState::Scene1)), // Configured to be able to run but not called
                 Scene1Set.run_if(in_state(AppState::Scene1)),
-                Scene2Set.run_if(in_state(AppState::Scene2))
+                Scene2Set.run_if(in_state(AppState::Scene2)),
+                Scene4Set.run_if(in_state(AppState::Scene4)),
             )
         )
 
@@ -161,7 +163,7 @@ pub fn run_game() {
             cleanup_scene3, toggle_visibility_system
         ))
         .add_systems(OnEnter(AppState::Scene4), (
-            my_placeholder_fn,
+            setup_pendulum, setup_double_pendulum,
         ))
         .add_systems(OnExit(AppState::Scene4), cleanup_scene4)
 
@@ -177,7 +179,7 @@ pub fn run_game() {
             (
                 assets_setup, world_setup, button_setup,
                 (tilemaps_setup, make_invis_map_scene2).chain(),
-                (some_weird_fn, some_weird_fn).in_set(MyWeirdSet)
+                (some_weird_fn, some_weird_fn).in_set(MyWeirdSet),
             )
         )
         .add_systems
@@ -188,7 +190,8 @@ pub fn run_game() {
                 (fps_text_update_system, 
                 gravity_text_update_system,
                 update_bloom_settings,).in_set(Scene1Set),
-                (button_system).in_set(Scene3Set)
+                (button_system, execute_animations, spawn_slimes_system, update_slime_position).in_set(Scene3Set),
+                
             ),
         )
         .add_systems
@@ -215,7 +218,11 @@ pub fn run_game() {
                     ).chain(),
                     spawn_random_card,
                 ).in_set(Scene1Set),
-                (camera_movement_scene2).in_set(Scene2Set)
+                (camera_movement_scene2).in_set(Scene2Set),
+                (
+                    update_pendulum_system, draw_pendulum_system, draw_pendulum_trace,
+                    update_pendulum_system_rk4, draw_double_pendulum_system
+                ).in_set(Scene4Set),
             ),
         )
 

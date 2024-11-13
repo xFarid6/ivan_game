@@ -47,7 +47,10 @@ Daily planner for the continuation of the project:
 - [x] Add server
 - [ ] Integrate client with the game
 - [ ] Integrate server with the game
-
+- [ ] Add a Scene to play Snake
+- [ ] Add a Scene to play Space Shooter
+- [ ] Add a connect four
+ 
 ----
 
 
