@@ -14,6 +14,7 @@ pub enum AppState {
     Scene2,
     Scene3,
     Scene4,
+    Scene5,
     PauseMenu,
 }
 
@@ -23,7 +24,8 @@ impl AppState {
             AppState::Scene1 => AppState::Scene2,
             AppState::Scene2 => AppState::Scene3,
             AppState::Scene3 => AppState::Scene4,
-            AppState::Scene4 => AppState::Scene1,
+            AppState::Scene4 => AppState::Scene5,
+            AppState::Scene5 => AppState::Scene1,
             AppState::PauseMenu => AppState::Scene1,
         }
     }

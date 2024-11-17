@@ -15,12 +15,14 @@ mod app_state;
 mod tilemaps;
 mod buttons;
 mod pendulum;
-// mod scene4;
+mod scene5;
 mod scene1;
 
 pub mod server;
 pub mod client;
 mod networking;
+mod collisions;
+mod filling_circle_timer;
 
 // Bevy
 use bevy::{
@@ -52,12 +54,13 @@ use app_state::*;
 use tilemaps::*;
 use buttons::*;
 use pendulum::*;
-// use scene4::*;
+use scene5::*;
 use scene1::*;
+use collisions::*;
+use filling_circle_timer::*;
 
 use client::*;
 use networking::*;
-
 
 
 // SYSTEM SETS
@@ -76,6 +79,9 @@ struct Scene3Set;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 struct Scene4Set;
+
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+struct Scene5Set;
 
 // GAME ENTRY POINT
 pub fn run_game() {
@@ -107,9 +113,9 @@ pub fn run_game() {
         })
         // .insert_resource(WinitSettings::desktop_app())
         .insert_resource(CardHandles { cards_map: HashMap::new() } )
-        .insert_resource(SceneStack::new(AppState::Scene4))  // TODO: Start with Scene 1
+        .insert_resource(SceneStack::new(AppState::Scene3))  // TODO: Start with Scene 1
         .insert_resource(Maps::new())
-        .insert_state(AppState::Scene4) // TODO: Match above state
+        .insert_state(AppState::Scene3) // TODO: Match above state
 
 
         // SYSTEM CONFIGURATIONS    
@@ -118,7 +124,8 @@ pub fn run_game() {
             Startup, 
             (
                 MyWeirdSet.run_if(in_state(AppState::Scene1)),
-                Scene1Set.run_if(in_state(AppState::Scene1))
+                Scene1Set.run_if(in_state(AppState::Scene1)),
+                Scene5Set.run_if(in_state(AppState::Scene5))
             )
         )
         .configure_sets
@@ -138,7 +145,9 @@ pub fn run_game() {
                 MyWeirdSet.run_if(in_state(AppState::Scene1)), // Configured to be able to run but not called
                 Scene1Set.run_if(in_state(AppState::Scene1)),
                 Scene2Set.run_if(in_state(AppState::Scene2)),
+                Scene3Set.run_if(in_state(AppState::Scene3)),
                 Scene4Set.run_if(in_state(AppState::Scene4)),
+                Scene5Set.run_if(in_state(AppState::Scene5)),
             )
         )
 
@@ -157,7 +166,7 @@ pub fn run_game() {
             make_invis_map_scene2, cleanup_scene2
         ))
         .add_systems(OnEnter(AppState::Scene3), (
-            load_slimes, toggle_visibility_system,
+            load_slimes, toggle_visibility_system, setup_circle_timer
         ))
         .add_systems(OnExit(AppState::Scene3), (
             cleanup_scene3, toggle_visibility_system
@@ -180,6 +189,7 @@ pub fn run_game() {
                 assets_setup, world_setup, button_setup,
                 (tilemaps_setup, make_invis_map_scene2).chain(),
                 (some_weird_fn, some_weird_fn).in_set(MyWeirdSet),
+                (setup_solver).in_set(Scene5Set)
             )
         )
         .add_systems
@@ -219,10 +229,12 @@ pub fn run_game() {
                     spawn_random_card,
                 ).in_set(Scene1Set),
                 (camera_movement_scene2).in_set(Scene2Set),
+                (update_timer).in_set(Scene3Set),
                 (
                     update_pendulum_system, draw_pendulum_system, draw_pendulum_trace,
                     update_pendulum_system_rk4, draw_double_pendulum_system
                 ).in_set(Scene4Set),
+                (setup_scene5, spawn_circle, rebuild_quadtree).in_set(Scene5Set),
             ),
         )
 

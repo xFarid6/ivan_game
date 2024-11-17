@@ -17,7 +17,7 @@ Daily planner for the continuation of the project:
 - [-] ~~Control ball with keyboard arrow keys~~ (WASD + key to turn off gravity)
 - [ ] Test collisions with Triangles and Squares [(add collisions)](https://kishimotostudios.com/articles/aabb_collision/)
 - [x] Check out Tiled level editor (found [a better alternative](https://www.spritefusion.com/editor))
-- [ ] Get started working on the player (his file, structs, functions, sprites, ...)
+- [x] Get started working on the player (his file, structs, functions, sprites, ...)
 - [x] On [using bundles](https://bevy-cheatbook.github.io/programming/bundle.html)
 - [ ] Test out some particle systems
 - [x] Make a navigation for the app (currently implemented as State-switching)
@@ -32,15 +32,19 @@ Daily planner for the continuation of the project:
 - [x] Serve the game on the web?! (lib.rs file)
 - [ ] Make another world for the game
 - [ ] Add satisfying jigsaw particle effect (particles scatter on screen and follow mouse + explosion on click)
+        - expel force between particles
+        - random wandering vector
+        - attraction force to mouse position
+        - repulsion explosion on mouse click
 - [x] Adding buttons
 - [ ] Adding shaders
 - [x] Tilemap loading and rendering system
 - [ ] Implement new Scene with Graph drawing simulation
-- [ ] Add animated character
+- [x] Add animated character
 - [x] Implement cleanup functions for each level
 - [x] Add personal ID storage for tilemaps
 - [x] .set(ImagePlugin::default_nearest()) DONE
-- [ ] Add circle-filling timer
+- [x] Add circle-filling timer
 - [ ] Develop button adding api
 - [ ] Fix github Actions
 - [x] Add client
